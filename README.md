@@ -45,3 +45,45 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 	```
 3. Add the target to your prometheus server with port `2112`
 
+## Metrics
+
+|			Metric						 | Type  |
+|----------------------------------------|-------|
+|TotalCurrentAmps                      	 | Guage |
+|Phase                                 	 | Guage |
+|Length                                	 | Guage |
+|TotalCurrentAmps                      	 | Guage |
+|PhaseACurrentAmps                     	 | Guage |
+|PhaseBCurrentAmps                     	 | Guage |
+|PhaseCCurrentAmps                     	 | Guage |
+|CurrentScaleFactor                    	 | Guage |
+|VoltagePhaseABVolts                   	 | Guage |
+|VoltagePhaseBCVolts                   	 | Guage |
+|VoltagePhaseCAVolts                   	 | Guage |
+|VoltagePhaseANVolts                   	 | Guage |
+|VoltagePhaseBNVolts                   	 | Guage |
+|VoltagePhaseCNVolts                   	 | Guage |
+|VoltageScaleFactor                    	 | Guage |
+|ACPowerWatts                          	 | Guage |
+|ACPowerScaleFactor                    	 | Guage |
+|ACFrequencyHertz                      	 | Guage |
+|ACFrequencyScaleFactor                	 | Guage |
+|ACApparentPowerVA                     	 | Guage |
+|ACApparentPowerScaleFactor            	 | Guage |
+|ACReactivePowerVAR                    	 | Guage |
+|ACReactivePowerScaleFactor            	 | Guage |
+|ACPowerFactorPercent                  	 | Guage |
+|ACPowerFactorScaleFactor              	 | Guage |
+|ACLifetimeEnergyProductionWH          	 | Guage |
+|ACLifetimeEnergyProductionScaleFactor 	 | Guage |
+|DCCurrentAmps                         	 | Guage |
+|DCCurrentScaleFactor                  	 | Guage |
+|DCVoltage                             	 | Guage |
+|DCVoltageScaleFactor                  	 | Guage |
+|DCPowerWatts                          	 | Guage |
+|DCPowerWattsScaleFactor               	 | Guage |
+|HeatSinkTemperatureC                  	 | Guage |
+|HeatSinkTemperatureScaleFactor        	 | Guage |
+|Status                                	 | Guage |
+|StatusVendor                          	 | Guage |
+
