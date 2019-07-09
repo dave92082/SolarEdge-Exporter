@@ -1,0 +1,6 @@
+SolarEdge:
+  InverterAddress: "192.168.1.189"
+  InverterPort: 502
+Exporter:
+  # Update Interval in seconds
+  Interval: 5

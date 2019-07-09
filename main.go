@@ -27,6 +27,13 @@ func main() {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("/etc/solaredge-exporter")
 	viper.AddConfigPath("$HOME/.solaredge-exporter")
+	viper.SetDefault("SolarEdge.InverterAddress", "")
+	viper.SetDefault("SolarEdge.InverterPort", 0)
+	viper.SetDefault("Exporter.Interval", 5)
+	viper.BindEnv("SolarEdge.InverterAddress", "INVERTER_ADDRESS")
+	viper.BindEnv("SolarEdge.InverterPort", "INVERTER_PORT")
+	viper.BindEnv("Exporter.Interval", "EXPORTER_INTERVAL")
+	viper.AutomaticEnv()
 	viper.ReadInConfig()
 
 	// Open Logger
