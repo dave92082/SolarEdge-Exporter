@@ -4,6 +4,9 @@ Having just installed a SolarEdge inverter and not happy with the 15 minute dela
 provided by the monitoring service/api, I created this exporter to connects directly to SolarEdge inverter over ModBus TCP 
 to export (near) real time data to Prometheus.
 
+## Status
+The code could use some clean up but I have had it running for a weeks scraping data from the inverter every 5 seconds without any issues.
+
 ## Requirements
 * SolarEdge Inverter that supports SunSpec protocol (Tested with SE5000 w. CPU version 3.2221.0)
 * ModBus TCP Enabled on the inverter
