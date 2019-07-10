@@ -1,13 +1,36 @@
+/*
+
+MIT License
+
+Copyright (c) 2019 David Suarez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
-	"encoding/hex"
+	"SolarEdge-Exporter/config"
+	"SolarEdge-Exporter/exporter"
+	"SolarEdge-Exporter/solaredge"
 	"fmt"
 	"github.com/goburrow/modbus"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -15,73 +38,67 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
-
-
 func main() {
 	// Set up configuration
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("/etc/solaredge-exporter")
-	viper.AddConfigPath("$HOME/.solaredge-exporter")
-	viper.SetDefault("SolarEdge.InverterAddress", "")
-	viper.SetDefault("SolarEdge.InverterPort", 0)
-	viper.SetDefault("Exporter.Interval", 5)
-	viper.BindEnv("SolarEdge.InverterAddress", "INVERTER_ADDRESS")
-	viper.BindEnv("SolarEdge.InverterPort", "INVERTER_PORT")
-	viper.BindEnv("Exporter.Interval", "EXPORTER_INTERVAL")
-	viper.AutomaticEnv()
-	viper.ReadInConfig()
+	config.InitConfig()
 
 	// Open Logger
-	f, err := os.OpenFile("SolarEdge-Exporter.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	f, err := os.OpenFile("SolarEdge-Exporter.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Printf("Could not open log file: %s", err.Error())
+		return
 	}
 	defer f.Close()
+	m := io.MultiWriter(zerolog.ConsoleWriter{Out: os.Stdout}, f)
+	log.Logger = log.Output(zerolog.SyncWriter(m))
+	log.Info().Msg("Starting SolarEdge-Exporter")
+	log.Info().Msgf("Configured Inverter Address: %s", viper.GetString("SolarEdge.InverterAddress"))
+	log.Info().Msgf("Configured Inverter Address: %d", viper.GetInt("SolarEdge.InverterPort"))
 
-	multiwriter := io.MultiWriter(zerolog.ConsoleWriter{Out: os.Stdout}, f)
-
-	// Log starting parameters
-	zerolog.TimeFieldFormat = time.RFC3339
-
-
-	log.Logger = log.Output(zerolog.SyncWriter(multiwriter))
-	log.Debug().Msg("Starting SolarEdge-Exporter")
-	log.Debug().Msgf("Configured Inverter Address: %s", viper.GetString("SolarEdge.InverterAddress"))
-	log.Debug().Msgf("Configured Inverter Address: %d", viper.GetInt("SolarEdge.InverterPort"))
-
+	// Start Data Collection
+	// TODO: Add a cancellation context on SIGINT to cleanly close the connection
 	go runCollection()
+
+	// Start Prometheus Handler
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2112", nil)
+	err = http.ListenAndServe(":2112", nil)
+	if err != nil {
+		log.Error().Msgf("Could not start the prometheus metric server: %s", err.Error())
+	}
 }
 
 func runCollection() {
+	// Get Interval from Config
 	interval := viper.GetInt("Exporter.Interval")
 
+	// Configure Modbus Connection and Handler/Client
 	handler := modbus.NewTCPClientHandler(
-			fmt.Sprintf("%s:%d",
+		fmt.Sprintf("%s:%d",
 			viper.GetString("SolarEdge.InverterAddress"),
 			viper.GetInt("SolarEdge.InverterPort")))
-
 	handler.Timeout = 10 * time.Second
 	handler.SlaveId = 0x01
-
-
 	err := handler.Connect()
 	if err != nil {
 		log.Error().Msgf("Error connecting to Inverter: %s", err.Error())
 	}
-
 	client := modbus.NewClient(handler)
+	defer handler.Close()
+
+	// Collect and log common inverter data
+	infoData, err := client.ReadHoldingRegisters(40000, 70)
+	cm, err := solaredge.NewCommonModel(infoData)
+	log.Info().Msgf("Inverter Model: %s", cm.C_Model)
+	log.Info().Msgf("Inverter Serial: %s", cm.C_SerialNumber)
+	log.Info().Msgf("Inverter Version: %s", cm.C_Version)
 
 
-
+	// Collect logs forever
 	for {
-		results, err := client.ReadHoldingRegisters(40069, 40)
+		inverterData, err := client.ReadHoldingRegisters(40069, 40)
 		if err != nil {
 			log.Error().Msgf("Error reading holding registers: %s", err.Error())
 			log.Error().Msgf("Attempting to reconnect")
@@ -89,238 +106,55 @@ func runCollection() {
 			time.Sleep(7 * time.Second)
 			_ = handler.Connect()
 			continue
-
 		}
+		id, err := solaredge.NewInverterModel(inverterData)
+		if err != nil {
+			log.Error().Msgf("Error parsing data: %s", err.Error())
+			continue
+		}
+
 		log.Debug().Msg("Data retrieved from inverter")
-		if len(results) == 80 {
-			Phase.Set(float64(BytesToUInt16(results[0:2])))
-			Length.Set(float64(BytesToUInt16(results[2:4])))
-			TotalCurrentAmps.Set(float64(BytesToUInt16(results[4:6])))
-			PhaseACurrentAmps.Set(float64(BytesToUInt16(results[6:8])))
-			PhaseBCurrentAmps.Set(float64(BytesToUInt16(results[8:10])))
-			PhaseCCurrentAmps.Set(float64(BytesToUInt16(results[10:12])))
-			CurrentScaleFactor.Set(float64(BytesToInt16(results[12:14])))
-			VoltagePhaseABVolts.Set(float64(BytesToUInt16(results[14:16])))
-			VoltagePhaseBCVolts.Set(float64(BytesToUInt16(results[16:18])))
-			VoltagePhaseCAVolts.Set(float64(BytesToUInt16(results[18:20])))
-			VoltagePhaseANVolts.Set(float64(BytesToUInt16(results[20:22])))
-			VoltagePhaseBNVolts.Set(float64(BytesToUInt16(results[22:24])))
-			VoltagePhaseCNVolts.Set(float64(BytesToUInt16(results[24:26])))
-			VoltageScaleFactor.Set(float64(BytesToInt16(results[26:28])))
-			ACPowerWatts.Set(float64(BytesToUInt16(results[28:30])))
-			ACPowerScaleFactor.Set(float64(BytesToInt16(results[30:32])))
-			ACFrequencyHertz.Set(float64(BytesToUInt16(results[32:34])))
-			ACFrequencyScaleFactor.Set(float64(BytesToInt16(results[34:36])))
-			ACApparentPowerVA.Set(float64(BytesToUInt16(results[36:38])))
-			ACApparentPowerScaleFactor.Set(float64(BytesToInt16(results[38:40])))
-			ACReactivePowerVAR.Set(float64(BytesToUInt16(results[40:42])))
-			ACReactivePowerScaleFactor.Set(float64(BytesToInt16(results[42:44])))
-			ACPowerFactorPercent.Set(float64(BytesToUInt16(results[44:46])))
-			ACPowerFactorScaleFactor.Set(float64(BytesToInt16(results[46:48])))
-			ACLifetimeEnergyProductionWH.Set(float64(BytesToInt32(results[48:52])))
-			ACLifetimeEnergyProductionScaleFactor.Set(float64(BytesToInt16(results[52:54])))
-			DCCurrentAmps.Set(float64(BytesToUInt16(results[54:56])))
-			DCCurrentScaleFactor.Set(float64(BytesToInt16(results[56:58])))
-			DCVoltage.Set(float64(BytesToUInt16(results[58:60])))
-			DCVoltageScaleFactor.Set(float64(BytesToInt16(results[60:62])))
-			DCPowerWatts.Set(float64(BytesToUInt16(results[62:64])))
-			DCPowerWattsScaleFactor.Set(float64(BytesToInt16(results[64:66])))
-			HeatSinkTemperatureC.Set(float64(BytesToUInt16(results[68:70])))
-			HeatSinkTemperatureScaleFactor.Set(float64(BytesToInt16(results[74:76])))
-			Status.Set(float64(BytesToUInt16(results[76:78])))
-		} else {
-			log.Error().Msgf("Got bad data. Length: %d", len(results))
-		}
-
-
-
+		setMetrics(id)
 		time.Sleep(time.Duration(interval) * time.Second)
-
 	}
 
 }
 
-func BytesToString(i []byte) (string) {
-	hexValue := fmt.Sprintf("%x", binary.BigEndian.Uint32(i))
-	value, err := hex.DecodeString(hexValue)
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%s", value)
+func setMetrics(i solaredge.InverterModel) {
+	exporter.SunSpec_DID.Set(float64(i.SunSpec_DID))
+	exporter.SunSpec_Length.Set(float64(i.SunSpec_Length))
+	exporter.AC_Current.Set(float64(i.AC_Current))
+	exporter.AC_CurrentA.Set(float64(i.AC_CurrentA))
+	exporter.AC_CurrentB.Set(float64(i.AC_CurrentB))
+	exporter.AC_CurrentC.Set(float64(i.AC_CurrentC))
+	exporter.AC_Current_SF.Set(float64(i.AC_Current_SF))
+	exporter.AC_VoltageAB.Set(float64(i.AC_VoltageAB))
+	exporter.AC_VoltageBC.Set(float64(i.AC_VoltageBC))
+	exporter.AC_VoltageCA.Set(float64(i.AC_VoltageCA))
+	exporter.AC_VoltageAN.Set(float64(i.AC_VoltageAN))
+	exporter.AC_VoltageBN.Set(float64(i.AC_VoltageBN))
+	exporter.AC_VoltageCN.Set(float64(i.AC_VoltageCN))
+	exporter.AC_Voltage_SF.Set(float64(i.AC_Voltage_SF))
+	exporter.AC_Power.Set(float64(i.AC_Power))
+	exporter.AC_Power_SF.Set(float64(i.AC_Power_SF))
+	exporter.AC_Frequency.Set(float64(i.AC_Frequency))
+	exporter.AC_Frequency_SF.Set(float64(i.AC_Frequency_SF))
+	exporter.AC_VA.Set(float64(i.AC_VA))
+	exporter.AC_VA_SF.Set(float64(i.AC_VA_SF))
+	exporter.AC_VAR.Set(float64(i.AC_VAR))
+	exporter.AC_VAR_SF.Set(float64(i.AC_VAR_SF))
+	exporter.AC_PF.Set(float64(i.AC_PF))
+	exporter.AC_PF_SF.Set(float64(i.AC_PF_SF))
+	exporter.AC_Energy_WH.Set(float64(i.AC_Energy_WH))
+	exporter.AC_Energy_WH_SF.Set(float64(i.AC_Energy_WH_SF))
+	exporter.DC_Current.Set(float64(i.DC_Current))
+	exporter.DC_Current_SF.Set(float64(i.DC_Current_SF))
+	exporter.DC_Voltage.Set(float64(i.DC_Voltage))
+	exporter.DC_Voltage_SF.Set(float64(i.DC_Voltage_SF))
+	exporter.DC_Power.Set(float64(i.DC_Power))
+	exporter.DC_Power_SF.Set(float64(i.DC_Power_SF))
+	exporter.Temp_Sink.Set(float64(i.Temp_Sink))
+	exporter.Temp_SF.Set(float64(i.Temp_SF))
+	exporter.Status.Set(float64(i.Status))
+	exporter.Status_Vendor.Set(float64(i.Status_Vendor))
 }
-
-
-func BytesToInt16(i []byte) int16 {
-	return int16(i[1]) | (int16(i[0]) << 8)
-}
-
-func BytesToUInt16(i []byte) uint16 {
-	return binary.BigEndian.Uint16(i)
-}
-
-func BytesToInt32(i []byte) uint32 {
-	return binary.BigEndian.Uint32(i)
-}
-
-func CleanString(i []byte) string {
-	i = bytes.Trim(i, "\x00")
-	return strings.TrimSpace(string(i))
-}
-
-
-var (
-	TotalCurrentAps = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACTotalCurrent",
-		Help: "AC Total Current value in Amps",
-	})
-	Phase = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "Phase",
-		Help: "Phase",
-	})
-	Length = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "Length",
-		Help: "Length",
-	})
-	TotalCurrentAmps = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "TotalCurrentAmps",
-		Help: "TotalCurrentAmps",
-	})
-	PhaseACurrentAmps = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "PhaseACurrentAmps",
-		Help: "PhaseACurrentAmps",
-	})
-	PhaseBCurrentAmps = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "PhaseBCurrentAmps",
-		Help: "PhaseBCurrentAmps",
-	})
-	PhaseCCurrentAmps = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "PhaseCCurrentAmps",
-		Help: "PhaseCCurrentAmps",
-	})
-	CurrentScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "CurrentScaleFactor",
-		Help: "CurrentScaleFactor",
-	})
-	VoltagePhaseABVolts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "VoltagePhaseABVolts",
-		Help: "VoltagePhaseABVolts",
-	})
-	VoltagePhaseBCVolts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "VoltagePhaseBCVolts",
-		Help: "VoltagePhaseBCVolts",
-	})
-	VoltagePhaseCAVolts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "VoltagePhaseCAVolts",
-		Help: "VoltagePhaseCAVolts",
-	})
-	VoltagePhaseANVolts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "VoltagePhaseANVolts",
-		Help: "VoltagePhaseANVolts",
-	})
-	VoltagePhaseBNVolts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "VoltagePhaseBNVolts",
-		Help: "VoltagePhaseBNVolts",
-	})
-	VoltagePhaseCNVolts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "VoltagePhaseCNVolts",
-		Help: "VoltagePhaseCNVolts",
-	})
-	VoltageScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "VoltageScaleFactor",
-		Help: "VoltageScaleFactor",
-	})
-	ACPowerWatts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACPowerWatts",
-		Help: "ACPowerWatts",
-	})
-	ACPowerScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACPowerScaleFactor",
-		Help: "ACPowerScaleFactor",
-	})
-	ACFrequencyHertz = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACFrequencyHertz",
-		Help: "ACFrequencyHertz",
-	})
-	ACFrequencyScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACFrequencyScaleFactor",
-		Help: "ACFrequencyScaleFactor",
-	})
-	ACApparentPowerVA = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACApparentPowerVA",
-		Help: "ACApparentPowerVA",
-	})
-	ACApparentPowerScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACApparentPowerScaleFactor",
-		Help: "ACApparentPowerScaleFactor",
-	})
-	ACReactivePowerVAR = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACReactivePowerVAR",
-		Help: "ACReactivePowerVAR",
-	})
-	ACReactivePowerScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACReactivePowerScaleFactor",
-		Help: "ACReactivePowerScaleFactor",
-	})
-	ACPowerFactorPercent = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACPowerFactorPercent",
-		Help: "ACPowerFactorPercent",
-	})
-	ACPowerFactorScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACPowerFactorScaleFactor",
-		Help: "ACPowerFactorScaleFactor",
-	})
-	ACLifetimeEnergyProductionWH = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACLifetimeEnergyProductionWH",
-		Help: "ACLifetimeEnergyProductionWH",
-	})
-	ACLifetimeEnergyProductionScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ACLifetimeEnergyProductionScaleFactor",
-		Help: "ACLifetimeEnergyProductionScaleFactor",
-	})
-	DCCurrentAmps = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "DCCurrentAmps",
-		Help: "DCCurrentAmps",
-	})
-	DCCurrentScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "DCCurrentScaleFactor",
-		Help: "DCCurrentScaleFactor",
-	})
-	DCVoltage = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "DCVoltage",
-		Help: "DCVoltage",
-	})
-	DCVoltageScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "DCVoltageScaleFactor",
-		Help: "DCVoltageScaleFactor",
-	})
-	DCPowerWatts = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "DCPowerWatts",
-		Help: "DCPowerWatts",
-	})
-	DCPowerWattsScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "DCPowerWattsScaleFactor",
-		Help: "DCPowerWattsScaleFactor",
-	})
-	HeatSinkTemperatureC = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "HeatSinkTemperatureC",
-		Help: "HeatSinkTemperatureC",
-	})
-	HeatSinkTemperatureScaleFactor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "HeatSinkTemperatureScaleFactor",
-		Help: "HeatSinkTemperatureScaleFactor",
-	})
-	Status = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "Status",
-		Help: "Status",
-	})
-	StatusVendor = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "StatusVendor",
-		Help: "StatusVendor",
-	})
-
-)
-
-
-
-
-
