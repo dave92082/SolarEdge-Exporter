@@ -47,43 +47,42 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 
 ## Metrics
 
-|			Metric						 | Type  |
-|----------------------------------------|-------|
-|TotalCurrentAmps                      	 | Guage |
-|Phase                                 	 | Guage |
-|Length                                	 | Guage |
-|TotalCurrentAmps                      	 | Guage |
-|PhaseACurrentAmps                     	 | Guage |
-|PhaseBCurrentAmps                     	 | Guage |
-|PhaseCCurrentAmps                     	 | Guage |
-|CurrentScaleFactor                    	 | Guage |
-|VoltagePhaseABVolts                   	 | Guage |
-|VoltagePhaseBCVolts                   	 | Guage |
-|VoltagePhaseCAVolts                   	 | Guage |
-|VoltagePhaseANVolts                   	 | Guage |
-|VoltagePhaseBNVolts                   	 | Guage |
-|VoltagePhaseCNVolts                   	 | Guage |
-|VoltageScaleFactor                    	 | Guage |
-|ACPowerWatts                          	 | Guage |
-|ACPowerScaleFactor                    	 | Guage |
-|ACFrequencyHertz                      	 | Guage |
-|ACFrequencyScaleFactor                	 | Guage |
-|ACApparentPowerVA                     	 | Guage |
-|ACApparentPowerScaleFactor            	 | Guage |
-|ACReactivePowerVAR                    	 | Guage |
-|ACReactivePowerScaleFactor            	 | Guage |
-|ACPowerFactorPercent                  	 | Guage |
-|ACPowerFactorScaleFactor              	 | Guage |
-|ACLifetimeEnergyProductionWH          	 | Guage |
-|ACLifetimeEnergyProductionScaleFactor 	 | Guage |
-|DCCurrentAmps                         	 | Guage |
-|DCCurrentScaleFactor                  	 | Guage |
-|DCVoltage                             	 | Guage |
-|DCVoltageScaleFactor                  	 | Guage |
-|DCPowerWatts                          	 | Guage |
-|DCPowerWattsScaleFactor               	 | Guage |
-|HeatSinkTemperatureC                  	 | Guage |
-|HeatSinkTemperatureScaleFactor        	 | Guage |
-|Status                                	 | Guage |
-|StatusVendor                          	 | Guage |
+|		Metric	 	 |	 Type	 |	Description/Help																																	 |
+|--------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+|SunSpec_DID     	 | 	 Guage 	 | 	 101 = single phase 102 = split phase1 103 = three phase                                                                                        	 |
+|SunSpec_Length  	 | 	 Guage 	 | 	 Registers 50 = Length of model block                                                                                                           	 |
+|AC_Current      	 | 	 Guage 	 | 	 Amps AC Total Current value                                                                                                                    	 |
+|AC_CurrentA     	 | 	 Guage 	 | 	 Amps AC Phase A Current value                                                                                                                  	 |
+|AC_CurrentB     	 | 	 Guage 	 | 	 Amps AC Phase B Current value                                                                                                                  	 |
+|AC_CurrentC     	 | 	 Guage 	 | 	 Amps AC Phase C Current value                                                                                                                  	 |
+|AC_Current_SF   	 | 	 Guage 	 | 	 AC Current scale factor                                                                                                                        	 |
+|AC_VoltageAB    	 | 	 Guage 	 | 	 Volts AC Voltage Phase AB value                                                                                                                	 |
+|AC_VoltageBC    	 | 	 Guage 	 | 	 Volts AC Voltage Phase BC value                                                                                                                	 |
+|AC_VoltageCA    	 | 	 Guage 	 | 	 Volts AC Voltage Phase CA value                                                                                                                	 |
+|AC_VoltageAN    	 | 	 Guage 	 | 	 Volts AC Voltage Phase A to N value                                                                                                            	 |
+|AC_VoltageBN    	 | 	 Guage 	 | 	 Volts AC Voltage Phase B to N value                                                                                                            	 |
+|AC_VoltageCN    	 | 	 Guage 	 | 	 Volts AC Voltage Phase C to N value                                                                                                            	 |
+|AC_Voltage_SF   	 | 	 Guage 	 | 	 AC Voltage scale factor                                                                                                                        	 |
+|AC_Power        	 | 	 Guage 	 | 	 Watts AC Power value                                                                                                                           	 |
+|AC_Power_SF     	 | 	 Guage 	 | 	 AC Power scale factor                                                                                                                          	 |
+|AC_Frequency    	 | 	 Guage 	 | 	 Hertz AC Frequency value                                                                                                                       	 |
+|AC_Frequency_SF 	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|AC_VA           	 | 	 Guage 	 | 	 VA Apparent Power                                                                                                                              	 |
+|AC_VA_SF        	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|AC_VAR          	 | 	 Guage 	 | 	 VAR Reactive Power                                                                                                                             	 |
+|AC_VAR_SF       	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|AC_PF           	 | 	 Guage 	 | 	 % Power Factor                                                                                                                                 	 |
+|AC_PF_SF        	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|AC_Energy_WH    	 | 	 Guage 	 | 	 WattHours AC Lifetime Energy production                                                                                                        	 |
+|AC_Energy_WH_SF 	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|DC_Current      	 | 	 Guage 	 | 	 Amps DC Current value                                                                                                                          	 |
+|DC_Current_SF   	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|DC_Voltage      	 | 	 Guage 	 | 	 Volts DC Voltage value                                                                                                                         	 |
+|DC_Voltage_SF   	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|DC_Power        	 | 	 Guage 	 | 	 Watts DC Power value                                                                                                                           	 |
+|DC_Power_SF     	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|Temp_Sink       	 | 	 Guage 	 | 	 Degrees C Heat Sink Temperature                                                                                                                	 |
+|Temp_SF         	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
+|Status          	 | 	 Guage 	 | 	 Operating State                                                                                                                                	 |
+|Status_Vendor   	 | 	 Guage 	 | 	 Vendor-defined operating state and error codes. For error description, meaning and troubleshooting, refer to the SolarEdge Installation Guide. 	 |
 
