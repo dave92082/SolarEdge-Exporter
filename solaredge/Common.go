@@ -35,14 +35,25 @@ import (
 // from the implementation technical note:
 // https://www.solaredge.com/sites/default/files/sunspec-implementation-technical-note.pdf
 type CommonModel struct {
-	C_SunSpec_ID		uint32
-	C_SunSpec_DID		uint16
-	C_SunSpec_Length	uint16
-	C_Manufacturer		[]byte
-	C_Model				[]byte
-	C_Version			[]byte // Version defined in SunSpec implementation note as String(16) however is incorrect
-	C_SerialNumber		[]byte
-	C_DeviceAddress		uint16
+	C_SunSpec_ID     uint32
+	C_SunSpec_DID    uint16
+	C_SunSpec_Length uint16
+	C_Manufacturer   []byte
+	C_Model          []byte
+	C_Version        []byte // Version defined in SunSpec implementation note as String(16) however is incorrect
+	C_SerialNumber   []byte
+	C_DeviceAddress  uint16
+}
+
+type CommonMeter struct {
+	C_SunSpec_DID    uint16
+	C_SunSpec_Length uint16
+	C_Manufacturer   []byte
+	C_Model          []byte
+	C_Option         []byte
+	C_Version        []byte // Version defined in SunSpec implementation note as String(16) however is incorrect
+	C_SerialNumber   []byte
+	C_DeviceAddress  uint16
 }
 
 // NewCommonModel takes block of data read from the Modbus TCP connection and returns a new
@@ -75,3 +86,32 @@ func NewCommonModel(data []byte) (CommonModel, error) {
 	return cm, nil
 }
 
+func NewCommonMeter(data []byte) (CommonMeter, error) {
+	buf := uio.NewBigEndianBuffer(data)
+	if len(data) < 100 {
+		return CommonMeter{}, errors.New("Improper Data Size")
+	}
+
+	var cm CommonMeter
+	cm.C_Manufacturer = make([]byte, 32)
+	cm.C_Model = make([]byte, 32)
+	cm.C_Version = make([]byte, 16)
+	cm.C_Option = make([]byte, 16)
+	cm.C_SerialNumber = make([]byte, 16)
+
+	cm.C_SunSpec_DID = buf.Read16()
+	cm.C_SunSpec_Length = buf.Read16()
+	buf.ReadBytes(cm.C_Manufacturer[:])
+	buf.ReadBytes(cm.C_Model[:])
+	buf.ReadBytes(cm.C_Option[:])
+	buf.ReadBytes(cm.C_Version[:])
+	buf.ReadBytes(cm.C_SerialNumber[:])
+
+	cm.C_Manufacturer = bytes.Trim(cm.C_Manufacturer, "\x00")
+	cm.C_Model = bytes.Trim(cm.C_Model, "\x00")
+	cm.C_Option = bytes.Trim(cm.C_Option, "\x00")
+	cm.C_Version = bytes.Trim(cm.C_Version, "\x00")
+	cm.C_SerialNumber = bytes.Trim(cm.C_SerialNumber, "\x00")
+
+	return cm, nil
+}
