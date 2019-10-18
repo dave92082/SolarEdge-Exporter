@@ -36,9 +36,13 @@ func InitConfig() {
 	viper.SetDefault("SolarEdge.InverterAddress", "")
 	viper.SetDefault("SolarEdge.InverterPort", 0)
 	viper.SetDefault("Exporter.Interval", 5)
+	viper.SetDefault("Exporter.ListenAddress", "")
+	viper.SetDefault("Exporter.ListenPort", 2112)
 	viper.BindEnv("SolarEdge.InverterAddress", "INVERTER_ADDRESS")
 	viper.BindEnv("SolarEdge.InverterPort", "INVERTER_PORT")
 	viper.BindEnv("Exporter.Interval", "EXPORTER_INTERVAL")
+	viper.BindEnv("Exporter.ListenAddress", "EXPORTER_ADDRESS")
+	viper.BindEnv("Exporter.ListenPort", "EXPORTER_PORT")
 	viper.AutomaticEnv()
 	viper.ReadInConfig()
 }
