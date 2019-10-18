@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="linux-amd64" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="SolarEdge-Exporter" />
+    <working_directory value="$PROJECT_DIR$/" />
+    <go_parameters value="-o build\linux\SolarEdge-Exporter.exe" />
+    <envs>
+      <env name="GOOS" value="linux" />
+      <env name="GOARCH" value="amd64" />
+    </envs>
+    <kind value="FILE" />
+    <filePath value="$PROJECT_DIR$/main.go" />
+    <package value="SolarEdge-Exporter" />
+    <directory value="$PROJECT_DIR$/" />
+    <option name="run" value="false" />
+    <method v="2" />
+  </configuration>
+</component>

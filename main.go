@@ -36,6 +36,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -98,6 +99,14 @@ func runCollection() {
 	log.Info().Msgf("Inverter Serial: %s", cm.C_SerialNumber)
 	log.Info().Msgf("Inverter Version: %s", cm.C_Version)
 
+
+	infoData2, err := client.ReadHoldingRegisters(40121, 65)
+	cm2, err := solaredge.NewCommonMeter(infoData2)
+	log.Info().Msgf("Meter Manufacturer: %s", cm2.C_Manufacturer)
+	log.Info().Msgf("Meter Model: %s", cm2.C_Model)
+	log.Info().Msgf("Meter Serial: %s", cm2.C_SerialNumber)
+	log.Info().Msgf("Meter Version: %s", cm2.C_Version)
+	log.Info().Msgf("Meter Option: %s", cm2.C_Option)
 	// Collect logs forever
 	for {
 		inverterData, err := client.ReadHoldingRegisters(40069, 40)
@@ -115,8 +124,21 @@ func runCollection() {
 			continue
 		}
 
+		infoData3, err := client.ReadHoldingRegisters(40188, 105)
+		mt, err := solaredge.NewMeterModel(infoData3)
+		log.Info().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
+		log.Info().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
+		log.Info().Msgf("Meter PF: %d", mt.M_AC_PF)
+		log.Info().Msgf("Meter Freq: %f", float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
+		log.Info().Msgf("Meter AC Power: %f", float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
+		log.Info().Msgf("Meter M_AC_VA: %f", float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
+		log.Info().Msgf("Meter M_Exported: %f", float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+		log.Info().Msgf("Meter M_Imported: %f", float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+
+		log.Debug().Msg("-------------------------------------------")
 		log.Debug().Msg("Data retrieved from inverter")
 		setMetrics(id)
+		setMetricsForMeter(mt)
 		time.Sleep(time.Duration(interval) * time.Second)
 	}
 
@@ -159,4 +181,54 @@ func setMetrics(i solaredge.InverterModel) {
 	exporter.Temp_SF.Set(float64(i.Temp_SF))
 	exporter.Status.Set(float64(i.Status))
 	exporter.Status_Vendor.Set(float64(i.Status_Vendor))
+}
+
+func setMetricsForMeter(m solaredge.MeterModel) {
+	exporter.M_SunSpec_DID.Set(float64(m.SunSpec_DID))
+	exporter.M_SunSpec_Length.Set(float64(m.SunSpec_Length))
+	exporter.M_AC_Current.Set(float64(m.M_AC_Current))
+	exporter.M_AC_CurrentA.Set(float64(m.M_AC_CurrentA))
+	exporter.M_AC_CurrentB.Set(float64(m.M_AC_CurrentB))
+	exporter.M_AC_CurrentC.Set(float64(m.M_AC_CurrentC))
+	exporter.M_AC_Current_SF.Set(float64(m.M_AC_Current_SF))
+	exporter.M_AC_VoltageLN.Set(float64(m.M_AC_VoltageLN))
+	exporter.M_AC_VoltageAN.Set(float64(m.M_AC_VoltageAN))
+	exporter.M_AC_VoltageBN.Set(float64(m.M_AC_VoltageBN))
+	exporter.M_AC_VoltageCN.Set(float64(m.M_AC_VoltageCN))
+	exporter.M_AC_VoltageLL.Set(float64(m.M_AC_VoltageLL))
+	exporter.M_AC_VoltageAB.Set(float64(m.M_AC_VoltageAB))
+	exporter.M_AC_VoltageBC.Set(float64(m.M_AC_VoltageBC))
+	exporter.M_AC_VoltageCA.Set(float64(m.M_AC_VoltageCA))
+	exporter.M_AC_Voltage_SF.Set(float64(m.M_AC_Voltage_SF))
+	exporter.M_AC_Frequency.Set(float64(m.M_AC_Frequency))
+	exporter.M_AC_Frequency_SF.Set(float64(m.M_AC_Frequency_SF))
+	exporter.M_AC_Power.Set(float64(m.M_AC_Power))
+	exporter.M_AC_Power_A.Set(float64(m.M_AC_Power_A))
+	exporter.M_AC_Power_B.Set(float64(m.M_AC_Power_B))
+	exporter.M_AC_Power_C.Set(float64(m.M_AC_Power_C))
+	exporter.M_AC_Power_SF.Set(float64(m.M_AC_Power_SF))
+	exporter.M_AC_VA.Set(float64(m.M_AC_VA))
+	exporter.M_AC_VA_A.Set(float64(m.M_AC_VA_A))
+	exporter.M_AC_VA_B.Set(float64(m.M_AC_VA_B))
+	exporter.M_AC_VA_C.Set(float64(m.M_AC_VA_C))
+	exporter.M_AC_VA_SF.Set(float64(m.M_AC_VA_SF))
+	exporter.M_AC_VAR.Set(float64(m.M_AC_VAR))
+	exporter.M_AC_VAR_A.Set(float64(m.M_AC_VAR_A))
+	exporter.M_AC_VAR_B.Set(float64(m.M_AC_VAR_B))
+	exporter.M_AC_VAR_C.Set(float64(m.M_AC_VAR_C))
+	exporter.M_AC_VAR_SF.Set(float64(m.M_AC_VAR_SF))
+	exporter.M_AC_PF.Set(float64(m.M_AC_PF))
+	exporter.M_AC_PF_A.Set(float64(m.M_AC_PF_A))
+	exporter.M_AC_PF_B.Set(float64(m.M_AC_PF_B))
+	exporter.M_AC_PF_C.Set(float64(m.M_AC_PF_C))
+	exporter.M_AC_PF_SF.Set(float64(m.M_AC_PF_SF))
+	exporter.M_Exported.Set(float64(m.M_Exported))
+	exporter.M_Exported_A.Set(float64(m.M_Exported_A))
+	exporter.M_Exported_B.Set(float64(m.M_Exported_B))
+	exporter.M_Exported_C.Set(float64(m.M_Exported_C))
+	exporter.M_Imported.Set(float64(m.M_Imported))
+	exporter.M_Imported_A.Set(float64(m.M_Imported_A))
+	exporter.M_Imported_B.Set(float64(m.M_Imported_B))
+	exporter.M_Imported_C.Set(float64(m.M_Imported_C))
+	exporter.M_Energy_W_SF.Set(float64(m.M_Energy_W_SF))
 }
