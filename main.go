@@ -38,6 +38,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -56,7 +57,9 @@ func main() {
 	log.Logger = log.Output(zerolog.SyncWriter(m))
 	log.Info().Msg("Starting SolarEdge-Exporter")
 	log.Info().Msgf("Configured Inverter Address: %s", viper.GetString("SolarEdge.InverterAddress"))
-	log.Info().Msgf("Configured Inverter Address: %d", viper.GetInt("SolarEdge.InverterPort"))
+	log.Info().Msgf("Configured Inverter Port: %d", viper.GetInt("SolarEdge.InverterPort"))
+	log.Info().Msgf("Configured Listen Address: %s", viper.GetString("Exporter.ListenAddress"))
+	log.Info().Msgf("Configured Listen Port: %d", viper.GetInt("Exporter.ListenPort"))
 
 	// Start Data Collection
 	// TODO: Add a cancellation context on SIGINT to cleanly close the connection
@@ -64,7 +67,7 @@ func main() {
 
 	// Start Prometheus Handler
 	http.Handle("/metrics", promhttp.Handler())
-	err = http.ListenAndServe(":2112", nil)
+	err = http.ListenAndServe(viper.GetString("Exporter.ListenAddress")+":"+strconv.Itoa(viper.GetInt("Exporter.ListenPort")), nil)
 	if err != nil {
 		log.Error().Msgf("Could not start the prometheus metric server: %s", err.Error())
 	}
@@ -94,7 +97,6 @@ func runCollection() {
 	log.Info().Msgf("Inverter Model: %s", cm.C_Model)
 	log.Info().Msgf("Inverter Serial: %s", cm.C_SerialNumber)
 	log.Info().Msgf("Inverter Version: %s", cm.C_Version)
-
 
 	// Collect logs forever
 	for {
