@@ -1,0 +1,14 @@
+[Unit]
+Description=SolarEdge Prometheus exporter: export ModBus TCP stats gathered from Solaredge inverters to Prometheus
+
+[Service]
+User=solaredge-exporter
+WorkingDirectory=~
+ExecStart=/path/to/solaredge-exporter
+PrivateTmp=yes
+NoNewPrivileges=yes
+Before=prometheus.service
+Wants=prometheus.service
+
+[Install]
+WantedBy=multi-user.target
