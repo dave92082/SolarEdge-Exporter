@@ -59,6 +59,7 @@ func main() {
 	log.Info().Msg("Starting SolarEdge-Exporter")
 	log.Info().Msgf("Configured Inverter Address: %s", viper.GetString("SolarEdge.InverterAddress"))
 	log.Info().Msgf("Configured Inverter Port: %d", viper.GetInt("SolarEdge.InverterPort"))
+	log.Info().Msgf("Configured Number of Meters: %d", viper.GetInt("SolarEdge.NumMeters"))
 	log.Info().Msgf("Configured Listen Address: %s", viper.GetString("Exporter.ListenAddress"))
 	log.Info().Msgf("Configured Listen Port: %d", viper.GetInt("Exporter.ListenPort"))
 
@@ -99,14 +100,33 @@ func runCollection() {
 	log.Info().Msgf("Inverter Serial: %s", cm.C_SerialNumber)
 	log.Info().Msgf("Inverter Version: %s", cm.C_Version)
 
-
-	infoData2, err := client.ReadHoldingRegisters(40121, 65)
-	cm2, err := solaredge.NewCommonMeter(infoData2)
-	log.Info().Msgf("Meter Manufacturer: %s", cm2.C_Manufacturer)
-	log.Info().Msgf("Meter Model: %s", cm2.C_Model)
-	log.Info().Msgf("Meter Serial: %s", cm2.C_SerialNumber)
-	log.Info().Msgf("Meter Version: %s", cm2.C_Version)
-	log.Info().Msgf("Meter Option: %s", cm2.C_Option)
+	nummeters := viper.GetInt("SolarEdge.NumMeters")
+    	// Meter 1 - common data
+	if nummeters > 0 {
+		infoData2, err := client.ReadHoldingRegisters(40121, 65)
+		if err != nil {
+			log.Error().Msgf("Error reading holding registers: %s", err.Error())
+		}
+		cm2, err := solaredge.NewCommonMeter(infoData2)
+		log.Info().Msgf("Meter 1 Manufacturer: %s", cm2.C_Manufacturer)
+		log.Info().Msgf("Meter 1 Model: %s", cm2.C_Model)
+		log.Info().Msgf("Meter 1 Serial: %s", cm2.C_SerialNumber)
+		log.Info().Msgf("Meter 1 Version: %s", cm2.C_Version)
+		log.Info().Msgf("Meter 1 Option: %s", cm2.C_Option)
+	}
+	// Meter 2 - common data
+	if nummeters > 1 {
+		infoData3, err := client.ReadHoldingRegisters(40295, 65)
+		if err != nil {
+			log.Error().Msgf("Error reading holding registers: %s", err.Error())
+		}		
+		cm3, err := solaredge.NewCommonMeter(infoData3)
+		log.Info().Msgf("Meter 2 Manufacturer: %s", cm3.C_Manufacturer)
+		log.Info().Msgf("Meter 2 Model: %s", cm3.C_Model)
+		log.Info().Msgf("Meter 2 Serial: %s", cm3.C_SerialNumber)
+		log.Info().Msgf("Meter 2 Version: %s", cm3.C_Version)
+		log.Info().Msgf("Meter 2 Option: %s", cm3.C_Option)
+	}
 	// Collect logs forever
 	for {
 		inverterData, err := client.ReadHoldingRegisters(40069, 40)
@@ -121,27 +141,47 @@ func runCollection() {
 		id, err := solaredge.NewInverterModel(inverterData)
 		if err != nil {
 			log.Error().Msgf("Error parsing data: %s", err.Error())
-			continue
 		}
 
-		infoData3, err := client.ReadHoldingRegisters(40188, 105)
-		mt, err := solaredge.NewMeterModel(infoData3)
-		log.Info().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
-		log.Info().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
-		log.Info().Msgf("Meter PF: %d", mt.M_AC_PF)
-		log.Info().Msgf("Meter Freq: %f", float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
-		log.Info().Msgf("Meter AC Power: %f", float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
-		log.Info().Msgf("Meter M_AC_VA: %f", float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
-		log.Info().Msgf("Meter M_Exported: %f", float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
-		log.Info().Msgf("Meter M_Imported: %f", float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
-
+        	// Meter 1 - meter data
+		if nummeters > 0 {		
+			infoData4, err := client.ReadHoldingRegisters(40188, 105)
+			if err != nil {
+				log.Error().Msgf("Error reading holding registers: %s", err.Error())
+			}			
+			mt1, err := solaredge.NewMeterModel(infoData4)
+			log.Info().Msgf("Meter 1 AC Current: %f", float64(mt1.M_AC_Current)*math.Pow(10, float64(mt1.M_AC_Current_SF)))
+			log.Info().Msgf("Meter 1 VoltageLN: %f", float64(mt1.M_AC_VoltageLN)*math.Pow(10, float64(mt1.M_AC_Voltage_SF)))
+			log.Info().Msgf("Meter 1 PF: %d", mt1.M_AC_PF)
+			log.Info().Msgf("Meter 1 Freq: %f", float64(mt1.M_AC_Frequency)*math.Pow(10, float64(mt1.M_AC_Frequency_SF)))
+			log.Info().Msgf("Meter 1 AC Power: %f", float64(mt1.M_AC_Power)*math.Pow(10.0, float64(mt1.M_AC_Power_SF)))
+			log.Info().Msgf("Meter 1 M_AC_VA: %f", float64(mt1.M_AC_VA)*math.Pow(10.0, float64(mt1.M_AC_VA_SF)))
+			log.Info().Msgf("Meter 1 M_Exported: %f", float64(mt1.M_Exported)*math.Pow(10.0, float64(mt1.M_Energy_W_SF)))
+			log.Info().Msgf("Meter 1 M_Imported: %f", float64(mt1.M_Imported)*math.Pow(10.0, float64(mt1.M_Energy_W_SF)))
+			setMetricsForMeter1(mt1)
+		}
+	        // Meter 2 - meter data
+		if nummeters > 1 {
+			infoData5, err := client.ReadHoldingRegisters(40362, 105)
+			if err != nil {
+				log.Error().Msgf("Error reading holding registers: %s", err.Error())
+			}
+			mt2, err := solaredge.NewMeterModel(infoData5)
+			log.Info().Msgf("Meter 2 AC Current: %f", float64(mt2.M_AC_Current)*math.Pow(10, float64(mt2.M_AC_Current_SF)))
+			log.Info().Msgf("Meter 2 VoltageLN: %f", float64(mt2.M_AC_VoltageLN)*math.Pow(10, float64(mt2.M_AC_Voltage_SF)))
+			log.Info().Msgf("Meter 2 PF: %d", mt2.M_AC_PF)
+			log.Info().Msgf("Meter 2 Freq: %f", float64(mt2.M_AC_Frequency)*math.Pow(10, float64(mt2.M_AC_Frequency_SF)))
+			log.Info().Msgf("Meter 2 AC Power: %f", float64(mt2.M_AC_Power)*math.Pow(10.0, float64(mt2.M_AC_Power_SF)))
+			log.Info().Msgf("Meter 2 M_AC_VA: %f", float64(mt2.M_AC_VA)*math.Pow(10.0, float64(mt2.M_AC_VA_SF)))
+			log.Info().Msgf("Meter 2 M_Exported: %f", float64(mt2.M_Exported)*math.Pow(10.0, float64(mt2.M_Energy_W_SF)))
+			log.Info().Msgf("Meter 2 M_Imported: %f", float64(mt2.M_Imported)*math.Pow(10.0, float64(mt2.M_Energy_W_SF)))
+			setMetricsForMeter2(mt2)
+		}
 		log.Debug().Msg("-------------------------------------------")
 		log.Debug().Msg("Data retrieved from inverter")
 		setMetrics(id)
-		setMetricsForMeter(mt)
 		time.Sleep(time.Duration(interval) * time.Second)
 	}
-
 }
 
 func setMetrics(i solaredge.InverterModel) {
@@ -183,7 +223,7 @@ func setMetrics(i solaredge.InverterModel) {
 	exporter.Status_Vendor.Set(float64(i.Status_Vendor))
 }
 
-func setMetricsForMeter(m solaredge.MeterModel) {
+func setMetricsForMeter1(m solaredge.MeterModel) {
 	exporter.M_SunSpec_DID.Set(float64(m.SunSpec_DID))
 	exporter.M_SunSpec_Length.Set(float64(m.SunSpec_Length))
 	exporter.M_AC_Current.Set(float64(m.M_AC_Current))
@@ -231,4 +271,54 @@ func setMetricsForMeter(m solaredge.MeterModel) {
 	exporter.M_Imported_B.Set(float64(m.M_Imported_B))
 	exporter.M_Imported_C.Set(float64(m.M_Imported_C))
 	exporter.M_Energy_W_SF.Set(float64(m.M_Energy_W_SF))
+}
+
+func setMetricsForMeter2(m solaredge.MeterModel) {
+	exporter.M2_SunSpec_DID.Set(float64(m.SunSpec_DID))
+	exporter.M2_SunSpec_Length.Set(float64(m.SunSpec_Length))
+	exporter.M2_AC_Current.Set(float64(m.M_AC_Current))
+	exporter.M2_AC_CurrentA.Set(float64(m.M_AC_CurrentA))
+	exporter.M2_AC_CurrentB.Set(float64(m.M_AC_CurrentB))
+	exporter.M2_AC_CurrentC.Set(float64(m.M_AC_CurrentC))
+	exporter.M2_AC_Current_SF.Set(float64(m.M_AC_Current_SF))
+	exporter.M2_AC_VoltageLN.Set(float64(m.M_AC_VoltageLN))
+	exporter.M2_AC_VoltageAN.Set(float64(m.M_AC_VoltageAN))
+	exporter.M2_AC_VoltageBN.Set(float64(m.M_AC_VoltageBN))
+	exporter.M2_AC_VoltageCN.Set(float64(m.M_AC_VoltageCN))
+	exporter.M2_AC_VoltageLL.Set(float64(m.M_AC_VoltageLL))
+	exporter.M2_AC_VoltageAB.Set(float64(m.M_AC_VoltageAB))
+	exporter.M2_AC_VoltageBC.Set(float64(m.M_AC_VoltageBC))
+	exporter.M2_AC_VoltageCA.Set(float64(m.M_AC_VoltageCA))
+	exporter.M2_AC_Voltage_SF.Set(float64(m.M_AC_Voltage_SF))
+	exporter.M2_AC_Frequency.Set(float64(m.M_AC_Frequency))
+	exporter.M2_AC_Frequency_SF.Set(float64(m.M_AC_Frequency_SF))
+	exporter.M2_AC_Power.Set(float64(m.M_AC_Power))
+	exporter.M2_AC_Power_A.Set(float64(m.M_AC_Power_A))
+	exporter.M2_AC_Power_B.Set(float64(m.M_AC_Power_B))
+	exporter.M2_AC_Power_C.Set(float64(m.M_AC_Power_C))
+	exporter.M2_AC_Power_SF.Set(float64(m.M_AC_Power_SF))
+	exporter.M2_AC_VA.Set(float64(m.M_AC_VA))
+	exporter.M2_AC_VA_A.Set(float64(m.M_AC_VA_A))
+	exporter.M2_AC_VA_B.Set(float64(m.M_AC_VA_B))
+	exporter.M2_AC_VA_C.Set(float64(m.M_AC_VA_C))
+	exporter.M2_AC_VA_SF.Set(float64(m.M_AC_VA_SF))
+	exporter.M2_AC_VAR.Set(float64(m.M_AC_VAR))
+	exporter.M2_AC_VAR_A.Set(float64(m.M_AC_VAR_A))
+	exporter.M2_AC_VAR_B.Set(float64(m.M_AC_VAR_B))
+	exporter.M2_AC_VAR_C.Set(float64(m.M_AC_VAR_C))
+	exporter.M2_AC_VAR_SF.Set(float64(m.M_AC_VAR_SF))
+	exporter.M2_AC_PF.Set(float64(m.M_AC_PF))
+	exporter.M2_AC_PF_A.Set(float64(m.M_AC_PF_A))
+	exporter.M2_AC_PF_B.Set(float64(m.M_AC_PF_B))
+	exporter.M2_AC_PF_C.Set(float64(m.M_AC_PF_C))
+	exporter.M2_AC_PF_SF.Set(float64(m.M_AC_PF_SF))
+	exporter.M2_Exported.Set(float64(m.M_Exported))
+	exporter.M2_Exported_A.Set(float64(m.M_Exported_A))
+	exporter.M2_Exported_B.Set(float64(m.M_Exported_B))
+	exporter.M2_Exported_C.Set(float64(m.M_Exported_C))
+	exporter.M2_Imported.Set(float64(m.M_Imported))
+	exporter.M2_Imported_A.Set(float64(m.M_Imported_A))
+	exporter.M2_Imported_B.Set(float64(m.M_Imported_B))
+	exporter.M2_Imported_C.Set(float64(m.M_Imported_C))
+	exporter.M2_Energy_W_SF.Set(float64(m.M_Energy_W_SF))
 }
