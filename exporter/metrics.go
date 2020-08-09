@@ -211,7 +211,7 @@ var (
 		Help: "Vendor-defined operating state and error codes. For error description, meaning and troubleshooting, refer to the SolarEdge Installation Guide.",
 	})
 
-	// Meter
+	// Meter 1
 
 	M_SunSpec_DID = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "M_SunSpec_DID",
@@ -446,5 +446,242 @@ var (
 	M_Energy_W_SF = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "M_Energy_W_SF",
 		Help: "M_Energy_W_SF",
+	})
+
+    //Meter 2
+
+	M2_SunSpec_DID = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_SunSpec_DID",
+		Help: "",
+	})
+
+	M2_SunSpec_Length = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_SunSpec_Length",
+		Help: "",
+	})
+
+	M2_AC_Current = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Current",
+		Help: "Amps AC Total Current value",
+	})
+
+	M2_AC_CurrentA = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_CurrentA",
+		Help: "Amps AC Phase A Current value",
+	})
+
+	M2_AC_CurrentB = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_CurrentB",
+		Help: "Amps AC Phase B Current value",
+	})
+
+	M2_AC_CurrentC = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_CurrentC",
+		Help: "Amps AC Phase C Current value",
+	})
+
+	M2_AC_Current_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Current_SF",
+		Help: "AC Current scale factor",
+	})
+
+	M2_AC_VoltageLN = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageLN",
+		Help: "Volts AC Voltage Phase AB value",
+	})
+
+	M2_AC_VoltageAN = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageAN",
+		Help: "Volts AC Voltage Phase BC value",
+	})
+
+	M2_AC_VoltageBN = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageBN",
+		Help: "Volts AC Voltage Phase BC value",
+	})
+
+	M2_AC_VoltageCN = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageCN",
+		Help: "Volts AC Voltage Phase BC value",
+	})
+
+	M2_AC_VoltageLL = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageLL",
+		Help: "Volts AC Voltage Phase BC value",
+	})
+
+	M2_AC_VoltageAB = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageAB",
+		Help: "Volts AC Voltage Phase BC value",
+	})
+
+	M2_AC_VoltageBC = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageBC",
+		Help: "Volts AC Voltage Phase BC value",
+	})
+
+	M2_AC_VoltageCA = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VoltageCA",
+		Help: "Volts AC Voltage Phase BC value",
+	})
+
+	M2_AC_Voltage_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Voltage_SF",
+		Help: "AC Voltage scale factor",
+	})
+
+	M2_AC_Frequency = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Frequency",
+		Help: "Hertz AC Frequency value",
+	})
+
+	M2_AC_Frequency_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Frequency_SF",
+		Help: "Scale factor",
+	})
+
+	M2_AC_Power = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Power",
+		Help: "Watts AC Power value",
+	})
+
+	M2_AC_Power_A = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Power_A",
+		Help: "Watts AC Power value",
+	})
+
+	M2_AC_Power_B = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Power_B",
+		Help: "Watts AC Power value",
+	})
+
+	M2_AC_Power_C = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Power_C",
+		Help: "Watts AC Power value",
+	})
+
+	M2_AC_Power_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_Power_SF",
+		Help: "AC Power scale factor",
+	})
+
+	M2_AC_VA = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VA",
+		Help: "VA Apparent Power",
+	})
+
+	M2_AC_VA_A = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VA_A",
+		Help: "VA Apparent Power",
+	})
+
+	M2_AC_VA_B = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VA_B",
+		Help: "VA Apparent Power",
+	})
+
+	M2_AC_VA_C = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VA_C",
+		Help: "VA Apparent Power",
+	})
+
+	M2_AC_VA_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VA_SF",
+		Help: "Scale factor",
+	})
+
+	M2_AC_VAR = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VAR",
+		Help: "VAR Reactive Power",
+	})
+
+	M2_AC_VAR_A = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VAR_A",
+		Help: "VAR Reactive Power",
+	})
+
+	M2_AC_VAR_B = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VAR_B",
+		Help: "VAR Reactive Power",
+	})
+
+	M2_AC_VAR_C = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VAR_C",
+		Help: "VAR Reactive Power",
+	})
+
+	M2_AC_VAR_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_VAR_SF",
+		Help: "Scale factor",
+	})
+
+	M2_AC_PF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_PF",
+		Help: "% Power Factor",
+	})
+
+	M2_AC_PF_A = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_PF_A",
+		Help: "% Power Factor",
+	})
+
+	M2_AC_PF_B = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_PF_B",
+		Help: "% Power Factor",
+	})
+
+	M2_AC_PF_C = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_PF_C",
+		Help: "% Power Factor",
+	})
+
+	M2_AC_PF_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_AC_PF_SF",
+		Help: "Scale factor",
+	})
+
+	M2_Exported = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Exported",
+		Help: "WattHours AC Exported",
+	})
+
+	M2_Exported_A = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Exported_A",
+		Help: "WattHours AC Exported",
+	})
+
+	M2_Exported_B = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Exported_B",
+		Help: "WattHours AC Exported",
+	})
+
+	M2_Exported_C = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Exported_C",
+		Help: "WattHours AC Exported",
+	})
+
+	M2_Imported = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Imported",
+		Help: "WattHours AC Imported",
+	})
+
+	M2_Imported_A = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Imported_A",
+		Help: "WattHours AC Imported",
+	})
+
+	M2_Imported_B = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Imported_B",
+		Help: "WattHours AC Imported",
+	})
+
+	M2_Imported_C = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Imported_C",
+		Help: "WattHours AC Imported",
+	})
+
+	M2_Energy_W_SF = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "M2_Energy_W_SF",
+		Help: "M2_Energy_W_SF",
 	})
 )

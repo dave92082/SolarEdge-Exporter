@@ -32,6 +32,7 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 		INVERTER_ADDRESS=192.168.1.189
 		EXPORTER_INTERVAL=5
 		INVERTER_PORT=502
+		NUMBER_METERS=0
 	``` 
 	* config.yaml:
 	Create a config file named `config.yaml` in the same location that you downloaded the executable with the following contents:
@@ -39,6 +40,8 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 	SolarEdge:
 	  InverterAddress: "192.168.1.189"
 	  InverterPort: 502
+	  # Number of meters connected to the Inverter (including the production meter)
+	  NumMeters: 0
 	Exporter:
 	  # Update Interval in seconds
 	  Interval: 5	
