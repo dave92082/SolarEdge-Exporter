@@ -43,6 +43,7 @@ func InitConfig() {
 	viper.BindEnv("Exporter.Interval", "EXPORTER_INTERVAL")
 	viper.BindEnv("Exporter.ListenAddress", "EXPORTER_ADDRESS")
 	viper.BindEnv("Exporter.ListenPort", "EXPORTER_PORT")
+	viper.BindEnv("Log.Debug", "DEBUG_LOGGING")
 	viper.AutomaticEnv()
 	viper.ReadInConfig()
 }

@@ -56,6 +56,10 @@ func main() {
 	defer f.Close()
 	m := io.MultiWriter(zerolog.ConsoleWriter{Out: os.Stdout}, f)
 	log.Logger = log.Output(zerolog.SyncWriter(m))
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if viper.GetBool("Log.Debug") {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 	log.Info().Msg("Starting SolarEdge-Exporter")
 	log.Info().Msgf("Configured Inverter Address: %s", viper.GetString("SolarEdge.InverterAddress"))
 	log.Info().Msgf("Configured Inverter Port: %d", viper.GetInt("SolarEdge.InverterPort"))
@@ -126,14 +130,14 @@ func runCollection() {
 
 		infoData3, err := client.ReadHoldingRegisters(40188, 105)
 		mt, err := solaredge.NewMeterModel(infoData3)
-		log.Info().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
-		log.Info().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
-		log.Info().Msgf("Meter PF: %d", mt.M_AC_PF)
-		log.Info().Msgf("Meter Freq: %f", float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
-		log.Info().Msgf("Meter AC Power: %f", float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
-		log.Info().Msgf("Meter M_AC_VA: %f", float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
-		log.Info().Msgf("Meter M_Exported: %f", float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
-		log.Info().Msgf("Meter M_Imported: %f", float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+		log.Debug().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
+		log.Debug().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
+		log.Debug().Msgf("Meter PF: %d", mt.M_AC_PF)
+		log.Debug().Msgf("Meter Freq: %f", float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
+		log.Debug().Msgf("Meter AC Power: %f", float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
+		log.Debug().Msgf("Meter M_AC_VA: %f", float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
+		log.Debug().Msgf("Meter M_Exported: %f", float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+		log.Debug().Msgf("Meter M_Imported: %f", float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
 
 		log.Debug().Msg("-------------------------------------------")
 		log.Debug().Msg("Data retrieved from inverter")
