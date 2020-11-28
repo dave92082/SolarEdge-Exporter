@@ -1,3 +1,10 @@
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=dave92082_SolarEdge-Exporter&metric=bugs)](https://sonarcloud.io/dashboard?id=dave92082_SolarEdge-Exporter)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=dave92082_SolarEdge-Exporter&metric=code_smells)](https://sonarcloud.io/dashboard?id=dave92082_SolarEdge-Exporter)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=dave92082_SolarEdge-Exporter&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=dave92082_SolarEdge-Exporter)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=dave92082_SolarEdge-Exporter&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=dave92082_SolarEdge-Exporter)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=dave92082_SolarEdge-Exporter&metric=security_rating)](https://sonarcloud.io/dashboard?id=dave92082_SolarEdge-Exporter)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=dave92082_SolarEdge-Exporter&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=dave92082_SolarEdge-Exporter)
+
 # SolarEdge Prometheus Exporter
 
 Having just installed a SolarEdge inverter and not happy with the 15 minute delay and low resolution of the monitoring data
