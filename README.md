@@ -41,7 +41,7 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 		EXPORTER_INTERVAL=5
         EXPORTER_ADDRESS=
         EXPORTER_PORT=2112
-        DEBUG_LOGGING=true/false
+        DEBUG_LOGGING=true|false
         LOG_PATH="SolarEdge-Exporter.log"
 	``` 
 	* config.yaml:
