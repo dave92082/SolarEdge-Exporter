@@ -9,7 +9,7 @@ fi
 if [ -f "SolarEdge-Exporter" ]; then
     echo "Exporter binary found. Proceeding to install."
 else 
-    echo "Exporter binary not found! Please copy it here and check if it is named "SolarEdge-Exporter""
+    echo "Exporter binary not found! Please copy it here and check if it is named 'SolarEdge-Exporter'"
     exit 1
 fi
 
@@ -33,4 +33,4 @@ sed -i 's/SolarEdge-Exporter.log/\/var\/log\/SolarEdge\/SolarEdge-Exporter.log/g
 mkdir /var/log/SolarEdge
 chown solaredge_exporter:solaredge_exporter /var/log/SolarEdge
 
-echo "All done! Edit config in "/etc/solaredge-exporter/config.yaml" and use "systemctl enable solaredge_exporter.service" and "systemctl start solaredge_exporter.service" to start exporter"
+echo "All done! Edit config in '/etc/solaredge-exporter/config.yaml' and use '0systemctl enable solaredge_exporter.service' and 'systemctl start solaredge_exporter.service' to start exporter"
