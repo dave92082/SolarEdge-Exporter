@@ -45,6 +45,7 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
         LOG_PATH="SolarEdge-Exporter.log"
 	``` 
 	* config.yaml:
+    
 	Create a config file named `config.yaml` in the one of selected locations:
         * Executable locaton
         * /etc/solaredge-exporter
