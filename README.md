@@ -30,7 +30,7 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 
 ## Quick Start
 
-1. Download the binary from the Releases section for your platform
+1. Download the binary from the Releases section for your platform.
 2. Configure the exporter using *one* of the two methods available.
 	
 	*Replace the IP address in these samples with the address of your inverter*
@@ -65,6 +65,15 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
         Path: "SolarEdge-Exporter.log"	
 	```
 3. Add the target to your prometheus server with port `2112`
+
+## Installation
+
+1. Clone this repository to destination machine.
+2. Download the binary from the Releases section for your platform and unpack file named `SolarEdge-Exporter` into cloned repository folder.
+3. Run `chmod u+x linux_install.sh`.
+4. Run installation script.
+5. Configure exporter in `/etc/solaredge-exporter/config.yaml`.
+6. Enable and start exporter using `systemctl enable solaredge_exporter.service` and `systemctl start solaredge_exporter.service`.
 
 ## Metrics
 

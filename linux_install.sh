@@ -33,4 +33,4 @@ sed -i 's/SolarEdge-Exporter.log/\/var\/log\/SolarEdge\/SolarEdge-Exporter.log/g
 mkdir /var/log/SolarEdge
 chown solaredge_exporter:solaredge_exporter /var/log/SolarEdge
 
-echo "All done! Edit config in '/etc/solaredge-exporter/config.yaml' and use '0systemctl enable solaredge_exporter.service' and 'systemctl start solaredge_exporter.service' to start exporter"
+echo "All done! Edit config in '/etc/solaredge-exporter/config.yaml' and use 'systemctl enable solaredge_exporter.service' and 'systemctl start solaredge_exporter.service' to start exporter"
