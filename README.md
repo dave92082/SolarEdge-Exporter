@@ -36,15 +36,15 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 	*Replace the IP address in these samples with the address of your inverter*
 	* Environment Variables:
 	``` 
-		INVERTER_ADDRESS=192.168.1.189
+        INVERTER_ADDRESS=192.168.1.189
         INVERTER_PORT=502
-		EXPORTER_INTERVAL=5
+        EXPORTER_INTERVAL=5
         EXPORTER_ADDRESS=
         EXPORTER_PORT=2112
         DEBUG_LOGGING=true|false
         LOG_PATH="SolarEdge-Exporter.log"
 	``` 
-	* config.yaml:
+	* config.yaml:\
 	Create a config file named `config.yaml` in the one of selected locations:
         * Executable locaton
         * /etc/solaredge-exporter
