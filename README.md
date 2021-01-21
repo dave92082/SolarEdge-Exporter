@@ -37,18 +37,32 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 	* Environment Variables:
 	``` 
 		INVERTER_ADDRESS=192.168.1.189
+        INVERTER_PORT=502
 		EXPORTER_INTERVAL=5
-		INVERTER_PORT=502
+        EXPORTER_ADDRESS=
+        EXPORTER_PORT=2112
+        DEBUG_LOGGING=true/false
+        LOG_PATH="SolarEdge-Exporter.log"
 	``` 
 	* config.yaml:
-	Create a config file named `config.yaml` in the same location that you downloaded the executable with the following contents:
+	Create a config file named `config.yaml` in the one of selected locations:
+        * Executable locaton
+        * /etc/solaredge-exporter
+        * $HOME/.solaredge-exporter
+    
+    with the following contents:
 	```yaml
 	SolarEdge:
-	  InverterAddress: "192.168.1.189"
-	  InverterPort: 502
-	Exporter:
-	  # Update Interval in seconds
-	  Interval: 5	
+        InverterAddress: "192.168.1.189"
+        InverterPort: 502
+    Exporter:
+        # Update Interval in seconds
+        Interval: 5
+        ListenAddress: ""
+        ListenPort: 2112
+    Log:
+        Debug: false
+        Path: "SolarEdge-Exporter.log"	
 	```
 3. Add the target to your prometheus server with port `2112`
 

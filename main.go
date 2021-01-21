@@ -30,17 +30,18 @@ import (
 	"SolarEdge-Exporter/exporter"
 	"SolarEdge-Exporter/solaredge"
 	"fmt"
-	"github.com/goburrow/modbus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"io"
 	"math"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/goburrow/modbus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -48,7 +49,7 @@ func main() {
 	config.InitConfig()
 
 	// Open Logger
-	f, err := os.OpenFile("SolarEdge-Exporter.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(viper.GetString("Log.Path"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Printf("Could not open log file: %s", err.Error())
 		return
@@ -102,7 +103,6 @@ func runCollection() {
 	log.Info().Msgf("Inverter Model: %s", cm.C_Model)
 	log.Info().Msgf("Inverter Serial: %s", cm.C_SerialNumber)
 	log.Info().Msgf("Inverter Version: %s", cm.C_Version)
-
 
 	infoData2, err := client.ReadHoldingRegisters(40121, 65)
 	cm2, err := solaredge.NewCommonMeter(infoData2)

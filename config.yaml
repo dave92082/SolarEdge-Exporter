@@ -4,3 +4,8 @@ SolarEdge:
 Exporter:
   # Update Interval in seconds
   Interval: 5
+  ListenAddress: ""
+  ListenPort: 2112
+Log:
+  Debug: false
+  Path: "SolarEdge-Exporter.log"
