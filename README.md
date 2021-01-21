@@ -68,6 +68,8 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 
 ## Installation
 
+Installation script works only on systemd enabled linux distros.
+
 1. Clone this repository to destination machine.
 2. Download the binary from the Releases section for your platform and unpack file named `SolarEdge-Exporter` into cloned repository folder.
 3. Run `chmod u+x linux_install.sh`.
