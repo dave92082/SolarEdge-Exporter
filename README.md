@@ -57,7 +57,7 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
     Exporter:
         # Update Interval in seconds
         Interval: 5
-        ListenAddress: ""
+        ListenAddress: "127.0.0.1"
         ListenPort: 2112
     Log:
         Debug: false
