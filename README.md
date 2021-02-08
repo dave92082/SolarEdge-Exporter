@@ -45,7 +45,7 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
         LOG_PATH="SolarEdge-Exporter.log"
 	``` 
 	* config.yaml:\
-	Create a config file named `config.yaml` in the one of selected locations:
+	Create a config file named `config.yaml` in one of the selected locations:
         * Executable locaton
         * /etc/solaredge-exporter
         * $HOME/.solaredge-exporter
@@ -116,4 +116,3 @@ Installation script works only on systemd enabled linux distros.
 |Temp_SF         	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
 |Status          	 | 	 Guage 	 | 	 Operating State                                                                                                                                	 |
 |Status_Vendor   	 | 	 Guage 	 | 	 Vendor-defined operating state and error codes. For error description, meaning and troubleshooting, refer to the SolarEdge Installation Guide. 	 |
-
