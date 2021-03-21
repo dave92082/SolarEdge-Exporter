@@ -136,20 +136,20 @@ func runCollection() {
 		}
 
 		infoData3, err := client.ReadHoldingRegisters(40188, 105)
-		if err != nil {
-			log.Error().Msgf("Error reading meter holding registers: %s", err.Error())
-			log.Error().Msgf("Attempting to reconnect")
-			setZeroedMetricsForMeter()
-			_ = handler.Close()
-			time.Sleep(7 * time.Second)
-			_ = handler.Connect()
-			continue
-		}
+		//if err != nil {
+		//	log.Error().Msgf("Error reading meter holding registers: %s", err.Error())
+		//	log.Error().Msgf("Attempting to reconnect")
+		//	setZeroedMetricsForMeter()
+		//	_ = handler.Close()
+		//	time.Sleep(7 * time.Second)
+		//	_ = handler.Connect()
+		//	continue
+		//}
 		mt, err := solaredge.NewMeterModel(infoData3)
-		if err != nil {
-			log.Error().Msgf("Error parsing data: %s", err.Error())
-			continue
-		}
+		//if err != nil {
+		//	log.Error().Msgf("Error parsing data: %s", err.Error())
+		//	continue
+		//}
 		log.Debug().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
 		log.Debug().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
 		log.Debug().Msgf("Meter PF: %d", mt.M_AC_PF)
