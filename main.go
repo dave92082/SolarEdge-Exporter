@@ -121,7 +121,7 @@ func runCollection() {
 	for {
 		inverterData, err := client.ReadHoldingRegisters(40069, 40)
 		if err != nil {
-			log.Error().Msgf("Error reading holding registers: %s", err.Error())
+			log.Error().Msgf("Error reading inventer holding registers: %s", err.Error())
 			log.Error().Msgf("Attempting to reconnect")
 			setZeroedMetrics()
 			_ = handler.Close()
@@ -137,7 +137,7 @@ func runCollection() {
 
 		infoData3, err := client.ReadHoldingRegisters(40188, 105)
 		if err != nil {
-			log.Error().Msgf("Error reading holding registers: %s", err.Error())
+			log.Error().Msgf("Error reading meter holding registers: %s", err.Error())
 			log.Error().Msgf("Attempting to reconnect")
 			setZeroedMetricsForMeter()
 			_ = handler.Close()
