@@ -61,6 +61,7 @@ func main() {
 	if viper.GetBool("Log.Debug") {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
+
 	log.Info().Msg("Starting SolarEdge-Exporter")
 	log.Info().Msgf("Configured Inverter Address: %s", viper.GetString("SolarEdge.InverterAddress"))
 	log.Info().Msgf("Configured Inverter Port: %d", viper.GetInt("SolarEdge.InverterPort"))
@@ -82,6 +83,7 @@ func main() {
 func runCollection() {
 	// Get Interval from Config
 	interval := viper.GetInt("Exporter.Interval")
+	meterPresent := viper.GetBool("Log.Debug")
 
 	// Configure Modbus Connection and Handler/Client
 	handler := modbus.NewTCPClientHandler(
@@ -101,22 +103,28 @@ func runCollection() {
 	infoData, err := client.ReadHoldingRegisters(40000, 70)
 	cm, err := solaredge.NewCommonModel(infoData)
 	if err != nil {
-		log.Error().Msgf("Error parsing data: %s", err.Error())
+		log.Error().Msgf("Error parsing inventer common data: %s", err.Error())
 	}
+
 	log.Info().Msgf("Inverter Model: %s", cm.C_Model)
 	log.Info().Msgf("Inverter Serial: %s", cm.C_SerialNumber)
 	log.Info().Msgf("Inverter Version: %s", cm.C_Version)
 
-	infoData2, err := client.ReadHoldingRegisters(40121, 65)
-	cm2, err := solaredge.NewCommonMeter(infoData2)
-	if err != nil {
-		log.Error().Msgf("Error parsing data: %s", err.Error())
+	// Collect and log common meter data
+	if meterPresent {
+		infoData2, err := client.ReadHoldingRegisters(40121, 65)
+		cm2, err := solaredge.NewCommonMeter(infoData2)
+		if err != nil {
+			log.Error().Msgf("Error parsing metter common data: %s", err.Error())
+		}
+
+		log.Info().Msgf("Meter Manufacturer: %s", cm2.C_Manufacturer)
+		log.Info().Msgf("Meter Model: %s", cm2.C_Model)
+		log.Info().Msgf("Meter Serial: %s", cm2.C_SerialNumber)
+		log.Info().Msgf("Meter Version: %s", cm2.C_Version)
+		log.Info().Msgf("Meter Option: %s", cm2.C_Option)
 	}
-	log.Info().Msgf("Meter Manufacturer: %s", cm2.C_Manufacturer)
-	log.Info().Msgf("Meter Model: %s", cm2.C_Model)
-	log.Info().Msgf("Meter Serial: %s", cm2.C_SerialNumber)
-	log.Info().Msgf("Meter Version: %s", cm2.C_Version)
-	log.Info().Msgf("Meter Option: %s", cm2.C_Option)
+
 	// Collect logs forever
 	for {
 		inverterData, err := client.ReadHoldingRegisters(40069, 40)
@@ -129,40 +137,44 @@ func runCollection() {
 			_ = handler.Connect()
 			continue
 		}
+
 		id, err := solaredge.NewInverterModel(inverterData)
 		if err != nil {
-			log.Error().Msgf("Error parsing data: %s", err.Error())
+			log.Error().Msgf("Error parsing inventer data: %s", err.Error())
 			continue
 		}
 
-		infoData3, err := client.ReadHoldingRegisters(40188, 105)
-		//if err != nil {
-		//	log.Error().Msgf("Error reading meter holding registers: %s", err.Error())
-		//	log.Error().Msgf("Attempting to reconnect")
-		//	setZeroedMetricsForMeter()
-		//	_ = handler.Close()
-		//	time.Sleep(7 * time.Second)
-		//	_ = handler.Connect()
-		//	continue
-		//}
-		mt, err := solaredge.NewMeterModel(infoData3)
-		//if err != nil {
-		//	log.Error().Msgf("Error parsing data: %s", err.Error())
-		//	continue
-		//}
-		log.Debug().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
-		log.Debug().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
-		log.Debug().Msgf("Meter PF: %d", mt.M_AC_PF)
-		log.Debug().Msgf("Meter Freq: %f", float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
-		log.Debug().Msgf("Meter AC Power: %f", float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
-		log.Debug().Msgf("Meter M_AC_VA: %f", float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
-		log.Debug().Msgf("Meter M_Exported: %f", float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
-		log.Debug().Msgf("Meter M_Imported: %f", float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+		if meterPresent {
+			infoData3, err := client.ReadHoldingRegisters(40188, 105)
+			if err != nil {
+				log.Error().Msgf("Error reading meter holding registers: %s", err.Error())
+				log.Error().Msgf("Attempting to reconnect")
+				setZeroedMetricsForMeter()
+				_ = handler.Close()
+				time.Sleep(7 * time.Second)
+				_ = handler.Connect()
+				continue
+			}
+			mt, err := solaredge.NewMeterModel(infoData3)
+			if err != nil {
+				log.Error().Msgf("Error parsing meter data: %s", err.Error())
+				continue
+			}
 
-		log.Debug().Msg("-------------------------------------------")
-		log.Debug().Msg("Data retrieved from inverter")
+			log.Debug().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
+			log.Debug().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
+			log.Debug().Msgf("Meter PF: %d", mt.M_AC_PF)
+			log.Debug().Msgf("Meter Freq: %f", float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
+			log.Debug().Msgf("Meter AC Power: %f", float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
+			log.Debug().Msgf("Meter M_AC_VA: %f", float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
+			log.Debug().Msgf("Meter M_Exported: %f", float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+			log.Debug().Msgf("Meter M_Imported: %f", float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+
+			log.Debug().Msg("-------------------------------------------")
+			log.Debug().Msg("Data retrieved from inverter")
+			setMetricsForMeter(mt)
+		}
 		setMetrics(id)
-		setMetricsForMeter(mt)
 		time.Sleep(time.Duration(interval) * time.Second)
 	}
 
