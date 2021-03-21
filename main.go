@@ -55,9 +55,11 @@ func main() {
 		return
 	}
 	defer f.Close()
+
 	m := io.MultiWriter(zerolog.ConsoleWriter{Out: os.Stdout}, f)
 	log.Logger = log.Output(zerolog.SyncWriter(m))
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
 	if viper.GetBool("Log.Debug") {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
@@ -92,15 +94,25 @@ func runCollection() {
 			viper.GetInt("SolarEdge.InverterPort")))
 	handler.Timeout = 10 * time.Second
 	handler.SlaveId = 0x01
+
 	err := handler.Connect()
 	if err != nil {
 		log.Error().Msgf("Error connecting to Inverter: %s", err.Error())
 	}
+
 	client := modbus.NewClient(handler)
 	defer handler.Close()
 
 	// Collect and log common inverter data
 	infoData, err := client.ReadHoldingRegisters(40000, 70)
+	if err != nil {
+		log.Error().Msgf("Error reading common inventer holding registers: %s", err.Error())
+		log.Error().Msgf("Attempting to reconnect")
+		_ = handler.Close()
+		time.Sleep(7 * time.Second)
+		_ = handler.Connect()
+	}
+
 	cm, err := solaredge.NewCommonModel(infoData)
 	if err != nil {
 		log.Error().Msgf("Error parsing inventer common data: %s", err.Error())
@@ -113,6 +125,14 @@ func runCollection() {
 	// Collect and log common meter data
 	if meterPresent {
 		infoData2, err := client.ReadHoldingRegisters(40121, 65)
+		if err != nil {
+			log.Error().Msgf("Error reading common meter holding registers: %s", err.Error())
+			log.Error().Msgf("Attempting to reconnect")
+			_ = handler.Close()
+			time.Sleep(7 * time.Second)
+			_ = handler.Connect()
+		}
+
 		cm2, err := solaredge.NewCommonMeter(infoData2)
 		if err != nil {
 			log.Error().Msgf("Error parsing metter common data: %s", err.Error())
@@ -131,7 +151,6 @@ func runCollection() {
 		if err != nil {
 			log.Error().Msgf("Error reading inventer holding registers: %s", err.Error())
 			log.Error().Msgf("Attempting to reconnect")
-			setZeroedMetrics()
 			_ = handler.Close()
 			time.Sleep(7 * time.Second)
 			_ = handler.Connect()
@@ -149,7 +168,6 @@ func runCollection() {
 			if err != nil {
 				log.Error().Msgf("Error reading meter holding registers: %s", err.Error())
 				log.Error().Msgf("Attempting to reconnect")
-				setZeroedMetricsForMeter()
 				_ = handler.Close()
 				time.Sleep(7 * time.Second)
 				_ = handler.Connect()
@@ -267,93 +285,4 @@ func setMetricsForMeter(m solaredge.MeterModel) {
 	exporter.M_Imported_B.Set(float64(m.M_Imported_B))
 	exporter.M_Imported_C.Set(float64(m.M_Imported_C))
 	exporter.M_Energy_W_SF.Set(float64(m.M_Energy_W_SF))
-}
-
-func setZeroedMetrics() {
-	exporter.SunSpec_DID.Set(0.0)
-	exporter.SunSpec_Length.Set(0.0)
-	exporter.AC_Current.Set(0.0)
-	exporter.AC_CurrentA.Set(0.0)
-	exporter.AC_CurrentB.Set(0.0)
-	exporter.AC_CurrentC.Set(0.0)
-	exporter.AC_Current_SF.Set(0.0)
-	exporter.AC_VoltageAB.Set(0.0)
-	exporter.AC_VoltageBC.Set(0.0)
-	exporter.AC_VoltageCA.Set(0.0)
-	exporter.AC_VoltageAN.Set(0.0)
-	exporter.AC_VoltageBN.Set(0.0)
-	exporter.AC_VoltageCN.Set(0.0)
-	exporter.AC_Voltage_SF.Set(0.0)
-	exporter.AC_Power.Set(0.0)
-	exporter.AC_Power_SF.Set(0.0)
-	exporter.AC_Frequency.Set(0.0)
-	exporter.AC_Frequency_SF.Set(0.0)
-	exporter.AC_VA.Set(0.0)
-	exporter.AC_VA_SF.Set(0.0)
-	exporter.AC_VAR.Set(0.0)
-	exporter.AC_VAR_SF.Set(0.0)
-	exporter.AC_PF.Set(0.0)
-	exporter.AC_PF_SF.Set(0.0)
-	exporter.AC_Energy_WH.Set(0.0)
-	exporter.AC_Energy_WH_SF.Set(0.0)
-	exporter.DC_Current.Set(0.0)
-	exporter.DC_Current_SF.Set(0.0)
-	exporter.DC_Voltage.Set(0.0)
-	exporter.DC_Voltage_SF.Set(0.0)
-	exporter.DC_Power.Set(0.0)
-	exporter.DC_Power_SF.Set(0.0)
-	exporter.Temp_Sink.Set(0.0)
-	exporter.Temp_SF.Set(0.0)
-	exporter.Status.Set(0.0)
-	exporter.Status_Vendor.Set(0.0)
-}
-
-func setZeroedMetricsForMeter() {
-	exporter.M_SunSpec_DID.Set(0.0)
-	exporter.M_SunSpec_Length.Set(0.0)
-	exporter.M_AC_Current.Set(0.0)
-	exporter.M_AC_CurrentA.Set(0.0)
-	exporter.M_AC_CurrentB.Set(0.0)
-	exporter.M_AC_CurrentC.Set(0.0)
-	exporter.M_AC_Current_SF.Set(0.0)
-	exporter.M_AC_VoltageLN.Set(0.0)
-	exporter.M_AC_VoltageAN.Set(0.0)
-	exporter.M_AC_VoltageBN.Set(0.0)
-	exporter.M_AC_VoltageCN.Set(0.0)
-	exporter.M_AC_VoltageLL.Set(0.0)
-	exporter.M_AC_VoltageAB.Set(0.0)
-	exporter.M_AC_VoltageBC.Set(0.0)
-	exporter.M_AC_VoltageCA.Set(0.0)
-	exporter.M_AC_Voltage_SF.Set(0.0)
-	exporter.M_AC_Frequency.Set(0.0)
-	exporter.M_AC_Frequency_SF.Set(0.0)
-	exporter.M_AC_Power.Set(0.0)
-	exporter.M_AC_Power_A.Set(0.0)
-	exporter.M_AC_Power_B.Set(0.0)
-	exporter.M_AC_Power_C.Set(0.0)
-	exporter.M_AC_Power_SF.Set(0.0)
-	exporter.M_AC_VA.Set(0.0)
-	exporter.M_AC_VA_A.Set(0.0)
-	exporter.M_AC_VA_B.Set(0.0)
-	exporter.M_AC_VA_C.Set(0.0)
-	exporter.M_AC_VA_SF.Set(0.0)
-	exporter.M_AC_VAR.Set(0.0)
-	exporter.M_AC_VAR_A.Set(0.0)
-	exporter.M_AC_VAR_B.Set(0.0)
-	exporter.M_AC_VAR_C.Set(0.0)
-	exporter.M_AC_VAR_SF.Set(0.0)
-	exporter.M_AC_PF.Set(0.0)
-	exporter.M_AC_PF_A.Set(0.0)
-	exporter.M_AC_PF_B.Set(0.0)
-	exporter.M_AC_PF_C.Set(0.0)
-	exporter.M_AC_PF_SF.Set(0.0)
-	exporter.M_Exported.Set(0.0)
-	exporter.M_Exported_A.Set(0.0)
-	exporter.M_Exported_B.Set(0.0)
-	exporter.M_Exported_C.Set(0.0)
-	exporter.M_Imported.Set(0.0)
-	exporter.M_Imported_A.Set(0.0)
-	exporter.M_Imported_B.Set(0.0)
-	exporter.M_Imported_C.Set(0.0)
-	exporter.M_Energy_W_SF.Set(0.0)
 }
