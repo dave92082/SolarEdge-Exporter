@@ -30,27 +30,53 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 
 ## Quick Start
 
-1. Download the binary from the Releases section for your platform
+1. Download the binary from the Releases section for your platform.
 2. Configure the exporter using *one* of the two methods available.
 	
 	*Replace the IP address in these samples with the address of your inverter*
 	* Environment Variables:
 	``` 
-		INVERTER_ADDRESS=192.168.1.189
-		EXPORTER_INTERVAL=5
-		INVERTER_PORT=502
+        INVERTER_ADDRESS=192.168.1.189
+        INVERTER_PORT=502
+        EXPORTER_INTERVAL=5
+        EXPORTER_ADDRESS=127.0.0.1
+        EXPORTER_PORT=2112
+        DEBUG_LOGGING=true|false
+        METER_PRESENT=true|false
+        LOG_PATH="SolarEdge-Exporter.log"
 	``` 
-	* config.yaml:
-	Create a config file named `config.yaml` in the same location that you downloaded the executable with the following contents:
+	* config.yaml:\
+	Create a config file named `config.yaml` in one of the selected locations:
+        * Executable locaton
+        * /etc/solaredge-exporter
+        * $HOME/.solaredge-exporter
+    with the following contents:
 	```yaml
 	SolarEdge:
-	  InverterAddress: "192.168.1.189"
-	  InverterPort: 502
-	Exporter:
-	  # Update Interval in seconds
-	  Interval: 5	
+        InverterAddress: "192.168.1.189"
+        InverterPort: 502
+        MeterPresent: false
+    Exporter:
+        # Update Interval in seconds
+        Interval: 5
+        ListenAddress: "127.0.0.1"
+        ListenPort: 2112
+    Log:
+        Debug: false
+        Path: "SolarEdge-Exporter.log"	
 	```
 3. Add the target to your prometheus server with port `2112`
+
+## Installation
+
+Installation script works only on systemd enabled linux distros.
+
+1. Clone this repository to destination machine.
+2. Download the binary from the Releases section for your platform and unpack file named `SolarEdge-Exporter` into cloned repository folder.
+3. Run `chmod u+x linux_install.sh`.
+4. Run installation script.
+5. Configure exporter in `/etc/solaredge-exporter/config.yaml`.
+6. Enable and start exporter using `systemctl enable solaredge_exporter.service` and `systemctl start solaredge_exporter.service`.
 
 ## Metrics
 
@@ -92,4 +118,3 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 |Temp_SF         	 | 	 Guage 	 | 	 Scale factor                                                                                                                                   	 |
 |Status          	 | 	 Guage 	 | 	 Operating State                                                                                                                                	 |
 |Status_Vendor   	 | 	 Guage 	 | 	 Vendor-defined operating state and error codes. For error description, meaning and troubleshooting, refer to the SolarEdge Installation Guide. 	 |
-

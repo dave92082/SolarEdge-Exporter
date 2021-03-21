@@ -1,6 +1,12 @@
 SolarEdge:
   InverterAddress: "192.168.1.189"
   InverterPort: 502
+  MeterPresent: false
 Exporter:
   # Update Interval in seconds
   Interval: 5
+  ListenAddress: "127.0.0.1"
+  ListenPort: 2112
+Log:
+  Debug: false
+  Path: "SolarEdge-Exporter.log"
