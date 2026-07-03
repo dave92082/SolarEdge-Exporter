@@ -28,17 +28,18 @@ import (
 	"SolarEdge-Exporter/exporter"
 	"SolarEdge-Exporter/solaredge"
 	"fmt"
-	"github.com/goburrow/modbus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"io"
 	"math"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/goburrow/modbus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -63,6 +64,7 @@ func main() {
 	log.Info().Msgf("Configured Inverter Port: %d", viper.GetInt("SolarEdge.InverterPort"))
 	log.Info().Msgf("Configured Listen Address: %s", viper.GetString("Exporter.ListenAddress"))
 	log.Info().Msgf("Configured Listen Port: %d", viper.GetInt("Exporter.ListenPort"))
+	log.Info().Msgf("Configured Client ID: %x", byte(viper.GetInt("SolarEdge.ClientId")))
 
 	// Start Data Collection
 	// TODO: Add a cancellation context on SIGINT to cleanly close the connection
@@ -86,7 +88,7 @@ func runCollection() {
 			viper.GetString("SolarEdge.InverterAddress"),
 			viper.GetInt("SolarEdge.InverterPort")))
 	handler.Timeout = 10 * time.Second
-	handler.SlaveId = 0x01
+	handler.SlaveId = byte(viper.GetInt("SolarEdge.ClientId"))
 	err := handler.Connect()
 	if err != nil {
 		log.Error().Msgf("Error connecting to Inverter: %s", err.Error())
