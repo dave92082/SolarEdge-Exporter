@@ -8,10 +8,11 @@ jobs:
     name: release linux/amd64
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.11
+    - uses: actions/checkout@v4
+    - uses: wangyoucao577/go-release-action@v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        goversion: "1.26"
         goos: linux
         goarch: amd64
         extra_files: LICENSE.md README.md
@@ -19,10 +20,11 @@ jobs:
     name: release linux/arm64
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.11
+    - uses: actions/checkout@v4
+    - uses: wangyoucao577/go-release-action@v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        goversion: "1.26"
         goos: linux
         goarch: arm64
         extra_files: LICENSE.md README.md
@@ -30,10 +32,11 @@ jobs:
     name: release linux/macos
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.11
+    - uses: actions/checkout@v4
+    - uses: wangyoucao577/go-release-action@v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        goversion: "1.26"
         goos: darwin
         goarch: amd64
         extra_files: LICENSE.md README.md
@@ -41,10 +44,11 @@ jobs:
     name: release linux/windows
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.11
+    - uses: actions/checkout@v4
+    - uses: wangyoucao577/go-release-action@v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        goversion: "1.26"
         goos: windows
         goarch: amd64
         extra_files: LICENSE.md README.md

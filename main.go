@@ -1,8 +1,7 @@
 /*
-
 MIT License
 
-Copyright (c) 2019 David Suarez
+# Copyright (c) 2019 David Suarez
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +20,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 */
 package main
 
@@ -98,14 +96,25 @@ func runCollection() {
 
 	// Collect and log common inverter data
 	infoData, err := client.ReadHoldingRegisters(40000, 70)
+	if err != nil {
+		log.Error().Msgf("Error reading inverter common block: %s", err.Error())
+	}
 	cm, err := solaredge.NewCommonModel(infoData)
+	if err != nil {
+		log.Error().Msgf("Error parsing inverter common block: %s", err.Error())
+	}
 	log.Info().Msgf("Inverter Model: %s", cm.C_Model)
 	log.Info().Msgf("Inverter Serial: %s", cm.C_SerialNumber)
 	log.Info().Msgf("Inverter Version: %s", cm.C_Version)
 
-
 	infoData2, err := client.ReadHoldingRegisters(40121, 65)
+	if err != nil {
+		log.Error().Msgf("Error reading meter common block: %s", err.Error())
+	}
 	cm2, err := solaredge.NewCommonMeter(infoData2)
+	if err != nil {
+		log.Error().Msgf("Error parsing meter common block: %s", err.Error())
+	}
 	log.Info().Msgf("Meter Manufacturer: %s", cm2.C_Manufacturer)
 	log.Info().Msgf("Meter Model: %s", cm2.C_Model)
 	log.Info().Msgf("Meter Serial: %s", cm2.C_SerialNumber)
@@ -129,7 +138,15 @@ func runCollection() {
 		}
 
 		infoData3, err := client.ReadHoldingRegisters(40188, 105)
+		if err != nil {
+			log.Error().Msgf("Error reading meter registers: %s", err.Error())
+			continue
+		}
 		mt, err := solaredge.NewMeterModel(infoData3)
+		if err != nil {
+			log.Error().Msgf("Error parsing meter data: %s", err.Error())
+			continue
+		}
 		log.Debug().Msgf("Meter AC Current: %f", float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
 		log.Debug().Msgf("Meter VoltageLN: %f", float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
 		log.Debug().Msgf("Meter PF: %d", mt.M_AC_PF)
