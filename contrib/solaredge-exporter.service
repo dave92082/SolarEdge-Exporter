@@ -4,6 +4,8 @@ Description=SolarEdge Prometheus exporter: export ModBus TCP stats gathered from
 [Service]
 User=solaredge-exporter
 WorkingDirectory=~
+# Write the log somewhere the service user can write to (see also LOG_PATH)
+Environment=LOG_PATH=/var/log/solaredge-exporter/SolarEdge-Exporter.log
 ExecStart=/path/to/solaredge-exporter
 PrivateTmp=yes
 NoNewPrivileges=yes

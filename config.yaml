@@ -1,6 +1,12 @@
 SolarEdge:
-  InverterAddress: "192.168.1.189"
+  # One or more inverter addresses (comma separated, each optionally host:port)
+  InverterAddress: "192.168.1.184"
   InverterPort: 502
+  # Number of meters to read (0-3). Meters that are not detected are skipped.
+  NumMeters: 1
 Exporter:
   # Update Interval in seconds
   Interval: 5
+Log:
+  # Path of the log file
+  Path: "SolarEdge-Exporter.log"

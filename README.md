@@ -24,10 +24,6 @@ service. As per the SolarEdge documentation, the two monitoring methods can be u
 
 More information on how to enable ModBus TCP can be found in the SolarEdge Documentation [here](https://www.solaredge.com/sites/default/files/sunspec-implementation-technical-note.pdf)
 
-## TODO
-* Implement consumption meter output.
-	* This may already be working however my consumption meter is not installed yet so I cannot test
-
 ## Quick Start
 
 1. Download the binary from the Releases section for your platform
@@ -39,6 +35,8 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 		INVERTER_ADDRESS=192.168.1.189
 		EXPORTER_INTERVAL=5
 		INVERTER_PORT=502
+		NUMBER_METERS=1
+		LOG_PATH=SolarEdge-Exporter.log
 	``` 
 	* config.yaml:
 	Create a config file named `config.yaml` in the same location that you downloaded the executable with the following contents:
@@ -46,13 +44,51 @@ More information on how to enable ModBus TCP can be found in the SolarEdge Docum
 	SolarEdge:
 	  InverterAddress: "192.168.1.189"
 	  InverterPort: 502
+	  # Number of meters to read (0-3). Meters that are not detected are skipped.
+	  NumMeters: 1
 	Exporter:
 	  # Update Interval in seconds
-	  Interval: 5	
+	  Interval: 5
+	Log:
+	  # Path of the log file
+	  Path: "SolarEdge-Exporter.log"
 	```
 3. Add the target to your prometheus server with port `2112`
 
+### Multiple inverters
+
+`InverterAddress` (or `INVERTER_ADDRESS`) accepts a comma separated list of
+addresses, each optionally with its own port (`host:port`, defaulting to
+`InverterPort`):
+
+```yaml
+SolarEdge:
+  InverterAddress: "192.168.1.189,192.168.1.190:1502"
+```
+
+All metrics carry an `inverter` label with the `host:port` of the inverter
+they were read from, so the data of each inverter can be queried separately,
+e.g. `AC_Power{inverter="192.168.1.189:502"}`.
+
+### Meters
+
+Up to three SunSpec meters are supported via `NumMeters` / `NUMBER_METERS`
+(default `1`). The first meter is exported with the historical `M_*` metric
+prefix, the second and third as `M2_*` and `M3_*`. Meters that are not
+installed/enabled on the inverter are detected automatically and skipped, so
+no zero-valued meter metrics are exported on systems without a meter.
+
+### Grafana
+
+A sample Grafana dashboard is available in
+[grafana/SolarEdgeExporter.json](grafana/SolarEdgeExporter.json).
+
 ## Metrics
+
+All metrics are labeled with the `inverter` they were read from. In addition
+to the inverter metrics below, each detected meter exports the SunSpec meter
+values (`M_AC_Current`, `M_AC_Power`, `M_Exported`, `M_Imported`, ... —
+prefixed `M_`, `M2_` or `M3_` depending on the meter number).
 
 |		Metric	 	 |	 Type	 |	Description/Help																																	 |
 |--------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
