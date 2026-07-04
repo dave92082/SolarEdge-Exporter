@@ -27,13 +27,18 @@ import (
 	"SolarEdge-Exporter/config"
 	"SolarEdge-Exporter/exporter"
 	"SolarEdge-Exporter/solaredge"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/goburrow/modbus"
@@ -91,18 +96,35 @@ func main() {
 		meterMetrics[i] = exporter.NewMeterMetrics(prefix)
 	}
 
-	// Start Data Collection for each configured inverter
-	// TODO: Add a cancellation context on SIGINT to cleanly close the connection
+	// Start Data Collection for each configured inverter. The context is
+	// cancelled on SIGINT/SIGTERM so the collectors close their connections
+	// cleanly before the process exits.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	var collectors sync.WaitGroup
 	for _, target := range inverterTargets() {
-		go runCollection(target, meterMetrics)
+		collectors.Add(1)
+		go func() {
+			defer collectors.Done()
+			runCollection(ctx, target, meterMetrics)
+		}()
 	}
 
-	// Start Prometheus Handler
+	// Start Prometheus Handler, shutting it down once a stop signal arrives
 	http.Handle("/metrics", promhttp.Handler())
-	err = http.ListenAndServe(viper.GetString("Exporter.ListenAddress")+":"+strconv.Itoa(viper.GetInt("Exporter.ListenPort")), nil)
-	if err != nil {
+	server := &http.Server{Addr: viper.GetString("Exporter.ListenAddress") + ":" + strconv.Itoa(viper.GetInt("Exporter.ListenPort"))}
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = server.Shutdown(shutdownCtx)
+	}()
+	err = server.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Error().Msgf("Could not start the prometheus metric server: %s", err.Error())
 	}
+	collectors.Wait()
+	log.Info().Msg("SolarEdge-Exporter stopped")
 }
 
 // inverterTargets returns the list of inverter "host:port" targets from the
@@ -124,45 +146,26 @@ func inverterTargets() []string {
 	return targets
 }
 
-func runCollection(target string, meterMetrics []*exporter.MeterMetrics) {
+func runCollection(ctx context.Context, target string, meterMetrics []*exporter.MeterMetrics) {
 	// Get Interval from Config
-	interval := viper.GetInt("Exporter.Interval")
+	interval := time.Duration(viper.GetInt("Exporter.Interval")) * time.Second
 
-	// Configure Modbus Connection and Handler/Client
-	handler := modbus.NewTCPClientHandler(target)
-	handler.Timeout = 10 * time.Second
-	handler.SlaveId = byte(viper.GetInt("SolarEdge.ClientId"))
-	err := handler.Connect()
-	if err != nil {
-		log.Error().Msgf("[%s] Error connecting to Inverter: %s", target, err.Error())
-	}
-	client := modbus.NewClient(handler)
+	handler, client := connectInverter(target)
 	defer handler.Close()
-
-	// Collect and log common inverter data
-	infoData, err := client.ReadHoldingRegisters(40000, 70)
-	if err != nil {
-		log.Error().Msgf("[%s] Error reading inverter common block: %s", target, err.Error())
-	}
-	cm, err := solaredge.NewCommonModel(infoData)
-	if err != nil {
-		log.Error().Msgf("[%s] Error parsing inverter common block: %s", target, err.Error())
-	}
-	log.Info().Msgf("[%s] Inverter Model: %s", target, cm.C_Model)
-	log.Info().Msgf("[%s] Inverter Serial: %s", target, cm.C_SerialNumber)
-	log.Info().Msgf("[%s] Inverter Version: %s", target, cm.C_Version)
 
 	activeMeters := 0
 	metersDetected := false
 
-	// Collect logs forever
+	// Collect logs until the context is cancelled
 	for {
 		inverterData, err := client.ReadHoldingRegisters(40069, 40)
 		if err != nil {
 			log.Error().Msgf("[%s] Error reading holding registers: %s", target, err.Error())
 			log.Error().Msgf("[%s] Attempting to reconnect", target)
 			_ = handler.Close()
-			time.Sleep(7 * time.Second)
+			if !sleepOrDone(ctx, 7*time.Second) {
+				return
+			}
 			_ = handler.Connect()
 			continue
 		}
@@ -177,33 +180,77 @@ func runCollection(target string, meterMetrics []*exporter.MeterMetrics) {
 			activeMeters, metersDetected = detectMeters(client, target, len(meterMetrics))
 		}
 
-		for i := range activeMeters {
-			meterData, err := client.ReadHoldingRegisters(uint16(meterDataBase+i*meterBlockLength), 105)
-			if err != nil {
-				log.Error().Msgf("[%s] Error reading meter %d registers: %s", target, i+1, err.Error())
-				break
-			}
-			mt, err := solaredge.NewMeterModel(meterData)
-			if err != nil {
-				log.Error().Msgf("[%s] Error parsing meter %d data: %s", target, i+1, err.Error())
-				break
-			}
-			log.Debug().Msgf("[%s] Meter %d AC Current: %f", target, i+1, float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
-			log.Debug().Msgf("[%s] Meter %d VoltageLN: %f", target, i+1, float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
-			log.Debug().Msgf("[%s] Meter %d PF: %d", target, i+1, mt.M_AC_PF)
-			log.Debug().Msgf("[%s] Meter %d Freq: %f", target, i+1, float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
-			log.Debug().Msgf("[%s] Meter %d AC Power: %f", target, i+1, float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
-			log.Debug().Msgf("[%s] Meter %d M_AC_VA: %f", target, i+1, float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
-			log.Debug().Msgf("[%s] Meter %d M_Exported: %f", target, i+1, float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
-			log.Debug().Msgf("[%s] Meter %d M_Imported: %f", target, i+1, float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
-			setMetricsForMeter(meterMetrics[i], mt, target)
-		}
+		collectMeters(client, target, activeMeters, meterMetrics)
 
 		log.Debug().Msg("-------------------------------------------")
 		log.Debug().Msgf("[%s] Data retrieved from inverter", target)
-		time.Sleep(time.Duration(interval) * time.Second)
+		if !sleepOrDone(ctx, interval) {
+			return
+		}
 	}
+}
 
+// connectInverter opens the modbus connection to the inverter and logs its
+// common block details. Connection errors are logged, not fatal: the read
+// loop re-establishes the connection on its next cycle.
+func connectInverter(target string) (*modbus.TCPClientHandler, modbus.Client) {
+	handler := modbus.NewTCPClientHandler(target)
+	handler.Timeout = 10 * time.Second
+	handler.SlaveId = byte(viper.GetInt("SolarEdge.ClientId"))
+	err := handler.Connect()
+	if err != nil {
+		log.Error().Msgf("[%s] Error connecting to Inverter: %s", target, err.Error())
+	}
+	client := modbus.NewClient(handler)
+
+	infoData, err := client.ReadHoldingRegisters(40000, 70)
+	if err != nil {
+		log.Error().Msgf("[%s] Error reading inverter common block: %s", target, err.Error())
+	}
+	cm, err := solaredge.NewCommonModel(infoData)
+	if err != nil {
+		log.Error().Msgf("[%s] Error parsing inverter common block: %s", target, err.Error())
+	}
+	log.Info().Msgf("[%s] Inverter Model: %s", target, cm.C_Model)
+	log.Info().Msgf("[%s] Inverter Serial: %s", target, cm.C_SerialNumber)
+	log.Info().Msgf("[%s] Inverter Version: %s", target, cm.C_Version)
+	return handler, client
+}
+
+// collectMeters reads and publishes the data block of each active meter.
+func collectMeters(client modbus.Client, target string, activeMeters int, meterMetrics []*exporter.MeterMetrics) {
+	for i := range activeMeters {
+		meterData, err := client.ReadHoldingRegisters(uint16(meterDataBase+i*meterBlockLength), 105)
+		if err != nil {
+			log.Error().Msgf("[%s] Error reading meter %d registers: %s", target, i+1, err.Error())
+			return
+		}
+		mt, err := solaredge.NewMeterModel(meterData)
+		if err != nil {
+			log.Error().Msgf("[%s] Error parsing meter %d data: %s", target, i+1, err.Error())
+			return
+		}
+		log.Debug().Msgf("[%s] Meter %d AC Current: %f", target, i+1, float64(mt.M_AC_Current)*math.Pow(10, float64(mt.M_AC_Current_SF)))
+		log.Debug().Msgf("[%s] Meter %d VoltageLN: %f", target, i+1, float64(mt.M_AC_VoltageLN)*math.Pow(10, float64(mt.M_AC_Voltage_SF)))
+		log.Debug().Msgf("[%s] Meter %d PF: %d", target, i+1, mt.M_AC_PF)
+		log.Debug().Msgf("[%s] Meter %d Freq: %f", target, i+1, float64(mt.M_AC_Frequency)*math.Pow(10, float64(mt.M_AC_Frequency_SF)))
+		log.Debug().Msgf("[%s] Meter %d AC Power: %f", target, i+1, float64(mt.M_AC_Power)*math.Pow(10.0, float64(mt.M_AC_Power_SF)))
+		log.Debug().Msgf("[%s] Meter %d M_AC_VA: %f", target, i+1, float64(mt.M_AC_VA)*math.Pow(10.0, float64(mt.M_AC_VA_SF)))
+		log.Debug().Msgf("[%s] Meter %d M_Exported: %f", target, i+1, float64(mt.M_Exported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+		log.Debug().Msgf("[%s] Meter %d M_Imported: %f", target, i+1, float64(mt.M_Imported)*math.Pow(10.0, float64(mt.M_Energy_W_SF)))
+		setMetricsForMeter(meterMetrics[i], mt, target)
+	}
+}
+
+// sleepOrDone waits for d and reports whether the wait completed; it returns
+// false when ctx is cancelled first.
+func sleepOrDone(ctx context.Context, d time.Duration) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	case <-time.After(d):
+		return true
+	}
 }
 
 // detectMeters probes which of the configured meters are actually present.
