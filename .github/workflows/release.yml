@@ -8,8 +8,8 @@ jobs:
     name: release linux/amd64
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: wangyoucao577/go-release-action@v1.53
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+    - uses: wangyoucao577/go-release-action@481a2c1a0f1be199722e3e9b74d7199acafc30a8 # v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goversion: "1.26"
@@ -20,8 +20,8 @@ jobs:
     name: release linux/arm64
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: wangyoucao577/go-release-action@v1.53
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+    - uses: wangyoucao577/go-release-action@481a2c1a0f1be199722e3e9b74d7199acafc30a8 # v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goversion: "1.26"
@@ -32,8 +32,8 @@ jobs:
     name: release linux/macos
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: wangyoucao577/go-release-action@v1.53
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+    - uses: wangyoucao577/go-release-action@481a2c1a0f1be199722e3e9b74d7199acafc30a8 # v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goversion: "1.26"
@@ -44,8 +44,8 @@ jobs:
     name: release linux/windows
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: wangyoucao577/go-release-action@v1.53
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+    - uses: wangyoucao577/go-release-action@481a2c1a0f1be199722e3e9b74d7199acafc30a8 # v1.53
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goversion: "1.26"

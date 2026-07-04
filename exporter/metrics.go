@@ -32,7 +32,9 @@ import (
 // read from) so multiple inverters can be polled by a single exporter.
 var labels = []string{"inverter"}
 
-func newGauge(name string, help string) *prometheus.GaugeVec {
+const scaleFactorHelp = "Scale factor"
+
+func newGauge(name, help string) *prometheus.GaugeVec {
 	return promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: name,
 		Help: help,
@@ -92,55 +94,55 @@ var (
 		"Hertz AC Frequency value")
 
 	AC_Frequency_SF = newGauge("AC_Frequency_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	AC_VA = newGauge("AC_VA",
 		"VA Apparent Power")
 
 	AC_VA_SF = newGauge("AC_VA_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	AC_VAR = newGauge("AC_VAR",
 		"VAR Reactive Power")
 
 	AC_VAR_SF = newGauge("AC_VAR_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	AC_PF = newGauge("AC_PF",
 		"% Power Factor")
 
 	AC_PF_SF = newGauge("AC_PF_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	AC_Energy_WH = newGauge("AC_Energy_WH",
 		"WattHours AC Lifetime Energy production")
 
 	AC_Energy_WH_SF = newGauge("AC_Energy_WH_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	DC_Current = newGauge("DC_Current",
 		"Amps DC Current value")
 
 	DC_Current_SF = newGauge("DC_Current_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	DC_Voltage = newGauge("DC_Voltage",
 		"Volts DC Voltage value")
 
 	DC_Voltage_SF = newGauge("DC_Voltage_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	DC_Power = newGauge("DC_Power",
 		"Watts DC Power value")
 
 	DC_Power_SF = newGauge("DC_Power_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	Temp_Sink = newGauge("Temp_Sink",
 		"Degrees C Heat Sink Temperature")
 
 	Temp_SF = newGauge("Temp_SF",
-		"Scale factor")
+		scaleFactorHelp)
 
 	Status = newGauge("Status",
 		"Operating State")
@@ -204,7 +206,7 @@ type MeterMetrics struct {
 // NewMeterMetrics registers and returns the gauge set for one meter, using
 // the given metric name prefix (e.g. "M" for meter 1, "M2" for meter 2).
 func NewMeterMetrics(prefix string) *MeterMetrics {
-	g := func(name string, help string) *prometheus.GaugeVec {
+	g := func(name, help string) *prometheus.GaugeVec {
 		return newGauge(prefix+"_"+name, help)
 	}
 
@@ -226,7 +228,7 @@ func NewMeterMetrics(prefix string) *MeterMetrics {
 		AC_VoltageCA:    g("AC_VoltageCA", "Volts AC Voltage Phase CA value"),
 		AC_Voltage_SF:   g("AC_Voltage_SF", "AC Voltage scale factor"),
 		AC_Frequency:    g("AC_Frequency", "Hertz AC Frequency value"),
-		AC_Frequency_SF: g("AC_Frequency_SF", "Scale factor"),
+		AC_Frequency_SF: g("AC_Frequency_SF", scaleFactorHelp),
 		AC_Power:        g("AC_Power", "Watts AC Power value"),
 		AC_Power_A:      g("AC_Power_A", "Watts AC Power value Phase A"),
 		AC_Power_B:      g("AC_Power_B", "Watts AC Power value Phase B"),
@@ -236,17 +238,17 @@ func NewMeterMetrics(prefix string) *MeterMetrics {
 		AC_VA_A:         g("AC_VA_A", "VA Apparent Power Phase A"),
 		AC_VA_B:         g("AC_VA_B", "VA Apparent Power Phase B"),
 		AC_VA_C:         g("AC_VA_C", "VA Apparent Power Phase C"),
-		AC_VA_SF:        g("AC_VA_SF", "Scale factor"),
+		AC_VA_SF:        g("AC_VA_SF", scaleFactorHelp),
 		AC_VAR:          g("AC_VAR", "VAR Reactive Power"),
 		AC_VAR_A:        g("AC_VAR_A", "VAR Reactive Power Phase A"),
 		AC_VAR_B:        g("AC_VAR_B", "VAR Reactive Power Phase B"),
 		AC_VAR_C:        g("AC_VAR_C", "VAR Reactive Power Phase C"),
-		AC_VAR_SF:       g("AC_VAR_SF", "Scale factor"),
+		AC_VAR_SF:       g("AC_VAR_SF", scaleFactorHelp),
 		AC_PF:           g("AC_PF", "% Power Factor"),
 		AC_PF_A:         g("AC_PF_A", "% Power Factor Phase A"),
 		AC_PF_B:         g("AC_PF_B", "% Power Factor Phase B"),
 		AC_PF_C:         g("AC_PF_C", "% Power Factor Phase C"),
-		AC_PF_SF:        g("AC_PF_SF", "Scale factor"),
+		AC_PF_SF:        g("AC_PF_SF", scaleFactorHelp),
 		Exported:        g("Exported", "WattHours AC Exported"),
 		Exported_A:      g("Exported_A", "WattHours AC Exported Phase A"),
 		Exported_B:      g("Exported_B", "WattHours AC Exported Phase B"),
